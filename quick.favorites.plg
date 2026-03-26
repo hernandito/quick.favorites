@@ -7,10 +7,12 @@
   <!ENTITY pluginURL "https://raw.githubusercontent.com/&author;/&name;/main/&name;.plg">
 ]>
 
-<PLUGIN name="Quick Favorites" author="&author;" version="&version;" launch="&launch;" icon="star" pluginURL="&pluginURL;" min="6.9.0" support="https://github.com/&author;/&name;/issues">
+<PLUGIN name="Quick Favorites" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0" support="https://github.com/&author;/&name;/issues">
 
 <DESCRIPTION>
+<![CDATA[
 Quick Favorites allows you to create a custom dropdown menu in the Unraid header for fast navigation to internal pages, Docker containers, and User Scripts. Features include live icon previews, support for Emojis, and local script execution.
+]]>
 </DESCRIPTION>
 
 <CHANGES>
@@ -24,8 +26,6 @@ Quick Favorites allows you to create a custom dropdown menu in the Unraid header
 - Added Local Icon Reference page in Settings.
 - Support for User Scripts (Console, Background, and Logs).
 </CHANGES>
-
-
 <FILE Name="/usr/local/emhttp/plugins/&name;/QuickFavorites.page">
 <INLINE>
 <![CDATA[
