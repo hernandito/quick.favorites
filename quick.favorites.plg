@@ -4,12 +4,12 @@
   <!ENTITY author    "hernandito">
   <!ENTITY version   "2026.03.27">
   <!ENTITY launch    "Settings/QuickFavorites">
-  <!ENTITY pluginURL "https://raw.githubusercontent.com/&author;/&name;/main/&name;.plg">
+  <!ENTITY pluginURL "https://raw.githubusercontent.com/hernandito/quick.favorites/main/quick.favorites.plg">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0" support="https://github.com/&author;/&name;/issues">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.9.0" support="https://github.com/hernandito/quick.favorites/issues">
 
-<DESCRIPTION>Quick Favorites allows you to create a custom dropdown menu in the Unraid header for fast navigation to internal pages, Docker containers, and User Scripts. Features include live icon previews, support for Emojis, and local script execution.</DESCRIPTION>
+<DESCRIPTION>A custom dropdown menu for fast navigation to internal pages, Docker containers, and User Scripts with live icon previews and local script execution.</DESCRIPTION>
 
 <CHANGES>
 ###2026.03.27
