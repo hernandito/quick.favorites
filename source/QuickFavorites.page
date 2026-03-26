@@ -1,0 +1,730 @@
+Menu="Utilities"
+Title="Quick Favorites"
+Type="xmenu"
+Icon="star"
+Tabs="true"
+Markdown="false"
+---
+<?php
+$cfg_dir = "/boot/config/plugins/quick.favorites";
+$json_file = "$cfg_dir/favorites.json";
+$css_file = "$cfg_dir/custom.css";
+$notes_file = "$cfg_dir/user_notes.txt";
+
+if (!is_dir($cfg_dir)) {
+    mkdir($cfg_dir, 0755, true);
+}
+
+// 1. AJAX Listener: Unraid Core-Aware Auto-Scanner
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_native_icon') {
+    $path = trim($_POST['path'] ?? '');
+    $icon = 'fa-star'; 
+    
+    $core_icons = [
+        '/Dashboard' => 'fa-tachometer',
+        '/Main' => 'fa-server',
+        '/Shares' => 'fa-folder-open',
+        '/Users' => 'fa-user',
+        '/Settings' => 'fa-cogs',
+        '/Settings/Docker' => 'fa-docker',
+        '/Docker' => 'fa-docker',
+        '/Plugins' => 'fa-plug',
+        '/Apps' => 'fa-cubes',
+        '/Settings/NetworkSettings' => 'fa-sitemap',
+        '/Tools' => 'fa-wrench',
+        '/VMs' => 'fa-desktop',
+        '/SystemInformation' => 'fa-info-circle',
+        '/Tools/Syslog' => 'fa-file-text-o'
+    ];
+
+    if (array_key_exists($path, $core_icons)) {
+        $icon = $core_icons[$path];
+    } elseif (!empty($path)) {
+        $basename = strtolower(basename($path));
+        $files = glob("/usr/local/emhttp/plugins/*/*.page");
+        
+        foreach ($files as $file) {
+            $page_name = strtolower(basename($file, '.page'));
+            if ($page_name === $basename) {
+                $content = file_get_contents($file);
+                if (preg_match('/Icon="([^"]+)"/i', $content, $matches)) {
+                    $found = trim($matches[1]);
+                    if (strpos($found, '/') !== false) {
+                        $icon = $found;
+                    } elseif (strpos($found, '.') !== false) {
+                        $plugin_dir = basename(dirname($file));
+                        $icon = "/plugins/" . $plugin_dir . "/images/" . $found;
+                    } else {
+                        $icon = (strpos(strtolower($found), 'fa-') === 0) ? strtolower($found) : "fa-" . strtolower($found);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    echo $icon;
+    exit;
+}
+
+
+
+// 1.5 AJAX Listener: Safe Log Reader (Bypasses Bash spaces)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_script_log') {
+    // WIPE OUT any Unraid headers, menus, or HTML that were buffered before this script ran!
+    while (ob_get_level()) { ob_end_clean(); }
+    
+    $path = trim($_POST['path'] ?? '');
+    $path = preg_replace('/[^a-zA-Z0-9 \-_]/', '', $path);
+    $logFile = "/tmp/user.scripts/tmpScripts/" . $path . "/log.txt";
+    
+    if (file_exists($logFile)) {
+        echo file_get_contents($logFile);
+    } else {
+        echo "<span style='color:#ff4444; font-weight:bold;'>Log file not found. The script has not been run in the background yet, or the log was cleared.</span>";
+    }
+    exit;
+}
+
+
+// 2. Handle Save
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_favs'])) {
+    $new_favs = [];
+    $categories = $_POST['category'] ?? [];
+    $labels = $_POST['label'] ?? [];
+    $paths = $_POST['path'] ?? [];
+    $icons = $_POST['icon'] ?? [];
+    $actions = $_POST['action_type'] ?? [];
+    
+    for ($i = 0; $i < count($paths); $i++) {
+        $cat = trim($categories[$i]);
+        $l = trim($labels[$i]);
+        $p = trim($paths[$i]);
+        $ic = trim($icons[$i]);
+        $act = trim($actions[$i]);
+        
+        if ($ic === '' || strpos($ic, 'spin') !== false) $ic = 'fa-star';
+        if ($cat === '') $cat = 'Uncategorized';
+        
+        if ($p !== '' && $l !== '') {
+            $new_favs[$p] = [
+                'category' => $cat,
+                'label' => $l,
+                'icon' => $ic,
+                'action' => $act
+            ];
+        }
+    }
+    
+    file_put_contents($json_file, json_encode($new_favs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    
+    $custom_css = $_POST['custom_css'] ?? '';
+    file_put_contents($css_file, $custom_css);
+
+    $user_notes = $_POST['user_notes'] ?? '';
+    file_put_contents($notes_file, $user_notes);
+	
+	// Save Appearance Settings
+    $appearance_data = [
+        'menu_title' => $_POST['menu_title'] ?? 'Quick Favorites',
+        'icon_size' => $_POST['icon_size'] ?? '42',
+        'grid_columns' => $_POST['grid_columns'] ?? '4',
+        'menu_width' => $_POST['menu_width'] ?? '480',
+        'show_header' => $_POST['show_header'] ?? 'yes',
+        'hover_color' => $_POST['hover_color'] ?? '#333333',
+        'bg_color' => $_POST['bg_color'] ?? '#1c1c1c',
+        'header_color' => $_POST['header_color'] ?? '#ffca28',
+        'header_line' => $_POST['header_line'] ?? '#333333',
+        'section_title_color' => $_POST['section_title_color'] ?? '#aaaaaa',
+        'section_border_color' => $_POST['section_border_color'] ?? '#333333',
+        'icon_color' => $_POST['icon_color'] ?? '#e0e0e0',
+        'label_color' => $_POST['label_color'] ?? '#cccccc'
+    ];
+	
+	
+	
+    file_put_contents("$cfg_dir/appearance.json", json_encode($appearance_data, JSON_PRETTY_PRINT));
+
+    echo "<script>$(function() { swal({title:'Saved', text:'Settings updated!', type:'success', confirmButtonText:'Ok'}, function(){ window.location.href = window.location.pathname; }); });</script>";
+}
+
+// 3. Load Existing Configuration
+$favs = [];
+if (file_exists($json_file)) {
+    $raw = json_decode(file_get_contents($json_file), true);
+    if (is_array($raw)) {
+        foreach ($raw as $p => $data) {
+            if (is_string($data)) {
+                $favs[$p] = ['category' => 'General', 'label' => $data, 'icon' => 'fa-star', 'action' => '_self'];
+            } else {
+                $favs[$p] = array_merge(['category' => 'General', 'action' => '_self'], $data);
+            }
+        }
+    }
+}
+
+// Load Appearance Settings (with defaults)
+$appearance_file = "$cfg_dir/appearance.json";
+
+$defaults = [
+    'menu_title' => 'Quick Favorites',
+    'icon_size' => '32',
+    'bg_color' => '#1c1c1c',
+    'header_color' => '#ffca28',
+    'header_line' => '#333333',
+    'section_title_color' => '#888888',
+    'text_color' => '#e0e0e0',
+    'grid_columns' => '4',
+    'menu_width' => '480',
+    'hover_color' => '#333333',
+    'show_header' => 'yes'
+];
+
+
+$style = file_exists($appearance_file) ? array_merge($defaults, json_decode(file_get_contents($appearance_file), true)) : $defaults;
+
+$saved_css = file_exists($css_file) ? file_get_contents($css_file) : '';
+$saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
+?>
+
+<style>
+    .qf-fa-link { color: #0132f2; text-decoration: none; font-weight: bold; }
+    .qf-fa-link:hover { text-decoration: underline; }
+    
+    .qf-input { 
+        width: 100%; box-sizing: border-box; margin: 0; height: 30px; 
+        background: transparent; color: inherit; 
+        border: none; border-bottom: 1px solid rgba(128, 128, 128, 0.4); 
+        outline: none; 
+    }
+    
+    .qf-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+    
+    .qf-table thead tr th { 
+        text-align: left; 
+        padding: 4px 10px; 
+        background-color: rgba(128, 128, 128, 0.35); 
+        border-radius: 0px;
+    }
+
+    .qf-row {
+        background-color: rgba(128, 128, 128, 0.08);
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        border-radius: 8px;
+    }
+
+    .qf-table tbody tr td { 
+        padding: 5px 10px; 
+        vertical-align: middle; 
+    }
+
+    .drag-handle { cursor: grab; color: #888; font-size: 16px; text-align: center; width: 20px; }
+    .drag-handle:active { cursor: grabbing; }
+    
+    .preview-wrapper { 
+        width: 32px; height: 32px; 
+        display: flex; align-items: center; justify-content: center; 
+        background: transparent; border: none;
+        flex-shrink: 0;
+    }
+    .preview-wrapper i { color: #777; font-size: 32px; }
+    .preview-wrapper img { max-width: 32px; max-height: 32px; }
+    
+    .qf-btn-scan { padding: 0 6px; height: 30px; font-size: 11px; cursor: pointer; }
+    .qf-btn-remove { width: 30px; height: 30px; padding: 0; color: #ff4444; text-align: center; cursor: pointer; border: none; background: none; }
+
+    /* Updated UI Classes */
+    .qf-guide-block {
+        border-radius: 8px;
+        padding: 20px;
+        box-sizing: border-box;
+        border: 1px solid #b5b5b5;
+        border-left: 8px solid #a8a8a9;
+		padding-top: 15px;
+    }
+    .qf-notes-area {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 250px;
+        flex-grow: 1; /* This forces it to stretch and fill the remaining height */
+        border: 1px solid rgba(128, 128, 128, 0.4);
+        border-radius: 8px;
+        padding: 10px;
+        background: transparent;
+        color: inherit;
+        font-family: monospace;
+        resize: vertical;
+    }
+	
+	code {
+		font-family: monospace;  
+		background-color: #f4f4f4;  
+		padding: 2px 6px;  
+		border-radius: 4px;  
+		color: #c7254e;
+	}
+	
+</style>
+
+<style>
+    <?= $saved_css ?>
+</style>
+
+
+<div style="width: 95%; margin: 0 auto; padding-bottom: 50px;">
+    <h2 style="margin-bottom: 6px;">Manage Quick Favorites</h2>
+    
+    <div class="qf-instructions" style="background: rgba(0,0,0,0.1); border-left: 4px solid #ffca28; padding: 15px; margin-bottom: 10px;">
+        <h4 style="margin-top:0; margin-bottom: 2px;">Icon & Script Instructions</h4>
+        <ul style="margin-bottom:0; padding-left:20px; line-height: 2.4rem;">
+            <li><strong>UserScripts:</strong> For the "Path", simply enter the <b>Folder Name</b> of your script (e.g., <code > Daily Backup </code>).</li>
+            <li><strong>Spaces:</strong> Folder names with spaces (e.g., <code>My Script</code>) are supported, but avoiding spaces is best practice for Linux paths.</li>
+            <li><strong>FontAwesome:</strong> Unraid uses <b>FontAwesome 4.7 </b>classes. Find compatible icon names on the <a href="https://fontawesome.com/v4/icons/" target="_blank" class="qf-fa-link">v.4 Cheatsheet</a> (e.g., <code>fa-docker</code>).</li>
+            <li><strong>Custom Images:</strong> Paste a direct image URL or a local unRAID path (e.g., <code>/plugins/nvidia-driver/images/icon.png</code>).</li>
+        </ul>
+    </div>
+
+
+    <form method="POST" action="/Settings/QuickFavorites">
+        <table class="qf-table">
+           
+		   
+   
+			<thead>
+				<tr>
+					<th style="width: 30px;"></th> 
+					<th style="max-width: 140px; width: 10%;">Category</th>
+					<th style="max-width: 140px; width: 10%;">Label</th>
+					<th style="width: 30%;">Path / URL</th>
+					<th style="width: 35%;">Icon Path / FA Class</th>
+					<th style="width: 15%;">Action</th>
+					<th style="width: 40px; text-align:center;">Delete</th>
+				</tr>
+			</thead>
+						
+
+			<tbody id="fav-table-body">
+				<?php foreach ($favs as $path => $data): ?>
+				<tr class="qf-row">
+					<td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
+					<td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input"></td>
+					<td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input"></td>
+					<td><input type="text" name="path[]" value="<?= htmlspecialchars($path) ?>" required class="qf-input path-input"></td>
+					<td>
+						<div style="display:flex; align-items:center; gap:8px;">
+						
+						
+						
+						<span class="preview-wrapper">
+                            <?php if (strpos($data['icon'], '/') !== false || strpos($data['icon'], '.') !== false): ?>
+                                <img src="<?= htmlspecialchars($data['icon']) ?>" style="width:28px; height:28px;">
+                            <?php elseif (preg_match('/^[a-zA-Z0-9\-]+$/', $data['icon'])): ?>
+                                <?php $fa = (strpos($data['icon'], 'fa-') === 0) ? $data['icon'] : 'fa-' . $data['icon']; ?>
+                                <i class="fa <?= htmlspecialchars($fa) ?>" style="width:height:28px;; text-align:center;"></i>
+                            <?php else: ?>
+                                <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 28px;; line-height: 28px;; display: inline-block; width: 28px;; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
+                            <?php endif; ?>
+                        </span>
+
+
+
+							<input type="text" name="icon[]" value="<?= htmlspecialchars($data['icon']) ?>" required class="qf-input" oninput="updatePreview(this)">
+						</div>
+					</td>
+					<td>
+
+
+
+						<select name="action_type[]" class="qf-input">
+                            <option value="_self" <?= (isset($data['action']) && $data['action'] == '_self') ? 'selected' : '' ?>>Same Tab</option>
+                            <option value="_blank" <?= (isset($data['action']) && $data['action'] == '_blank') ? 'selected' : '' ?>>New Tab</option>
+                            <option value="script_modal" <?= (isset($data['action']) && $data['action'] == 'script_modal') ? 'selected' : '' ?>>Run Script (Console)</option>
+                            <option value="script_background" <?= (isset($data['action']) && $data['action'] == 'script_background') ? 'selected' : '' ?>>Run Script (Background)</option>
+                            <option value="script_log" <?= (isset($data['action']) && $data['action'] == 'script_log') ? 'selected' : '' ?>>User Script Log</option>
+                        </select>
+
+
+
+					</td>
+					<td class="qf-row-right-end" style="text-align:center;">
+						<button type="button" class="qf-btn-remove" onclick="$(this).closest('tr').remove();"><i class="fa fa-times"></i></button>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+			
+			
+			
+        </table>
+        
+		<div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;">
+            <input type="button" value="Add Row" onclick="addRow()" style="padding: 8px 15px; cursor: pointer; border-radius: 4px;">
+            <input type="button" value="Cancel" onclick="window.location.href='/Settings'" style="padding: 8px 15px; cursor: pointer; border-radius: 4px;">
+            <input type="submit" name="save_favs" value="Save Settings" style="background-color: #ffca28; color: #111; font-weight: bold; padding: 8px 20px; border-radius: 4px; cursor: pointer; border: none;">
+        </div>
+
+		<div style="display: flex; gap: 20px; margin-top: 10px; align-items: stretch; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 15px;">
+            
+
+
+<div style="flex: 0 0 260px; background: rgba(128,128,128,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.3); font-size: 12px;">
+            <h3 style="margin-top: 0; font-size: 16px;">Appearance</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                    <label>Header Title:</label>
+                    <input type="text" name="menu_title" value="<?= htmlspecialchars($style['menu_title']) ?>" class="qf-input" style="font-size: 13px; font-weight: bold;">
+                </div>
+                <div>
+                    <label>Icon Size (px)</label>
+                    <input type="number" name="icon_size" value="<?= htmlspecialchars($style['icon_size']) ?>" class="qf-input" style="font-size: 12px; font-weight: bold;">
+                </div>
+                <div>
+                    <label>Grid Columns:</label>
+                    <input type="number" name="grid_columns" value="<?= htmlspecialchars($style['grid_columns'] ?? '4') ?>" class="qf-input" style="font-size: 12px; font-weight: bold;" min="1" max="12">
+                </div>
+                <div>
+                    <label>Menu Width (px):</label>
+                    <input type="number" name="menu_width" value="<?= htmlspecialchars($style['menu_width'] ?? '480') ?>" class="qf-input" style="font-size: 12px; font-weight: bold;" min="100" max="2000">
+                </div>
+                <div>
+                    <label>Show Header:</label>
+                    <select name="show_header" class="qf-input" style="font-size: 12px; font-weight: bold;">
+                        <option value="yes" <?= ($style['show_header'] ?? 'yes') === 'yes' ? 'selected' : '' ?>>Yes</option>
+                        <option value="no" <?= ($style['show_header'] ?? 'yes') === 'no' ? 'selected' : '' ?>>No</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Menu BG:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['bg_color'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="bg_color" value="<?= strtoupper($style['bg_color']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Hover BG:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['hover_color'] ?? '#333333' ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="hover_color" value="<?= strtoupper($style['hover_color'] ?? '#333333') ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Header Font:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['header_color'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="header_color" value="<?= strtoupper($style['header_color']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Header Line:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['header_line'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="header_line" value="<?= strtoupper($style['header_line']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Section Font:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['section_title_color'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="section_title_color" value="<?= strtoupper($style['section_title_color']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Section Line:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['section_border_color'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="section_border_color" value="<?= strtoupper($style['section_border_color']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Icon (FA):</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['icon_color'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="icon_color" value="<?= strtoupper($style['icon_color']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+
+
+
+
+			<div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Label Font:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" value="<?= $style['label_color'] ?>" style="width:90px; height:24px; border:none; background:none; cursor:pointer;" class="color-picker-sync">
+                        <input type="text" name="label_color" value="<?= strtoupper($style['label_color']) ?>" style="width:70px; height:24px; font-family:monospace; font-size:12px; text-align:center; background:none; border:none; border-bottom:1px solid rgba(128,128,128,0.3); color:var(--text-color, inherit); outline:none;" class="color-text-sync">
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 15px;">
+                <button type="button" id="btn-copy-app" onclick="copyAppearanceSettings()" style="width:100%; padding: 6px; border-radius: 4px; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid rgba(128,128,128,0.3); color: inherit; transition: background 0.2s; margin-bottom: 0;">📋 Copy to Clipboard</button>To safeguard your settings as you make edits, use button above to copy current settings. You can then paste them into User Notes for safekeeping. Don't forget to Save Settings before making changes.
+                <button type="button" onclick="resetAppearanceDefaults()" style="width:100%; padding: 6px; border-radius: 4px; cursor: pointer; background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: #ff5555; transition: background 0.2s;">⚠️ Set to Defaults</button>
+            </div>
+            
+        </div>
+
+
+            <div style="flex: 1; display: flex; flex-direction: column; padding: 15px; border: 1px solid #cbcbcb; border-radius: 8px; padding-left: 20px; padding-right: 20px;">
+                <h3 style="margin-top: 0; margin-bottom: 5px;">Custom CSS</h3>
+                <p style="margin-top: 2px; margin-bottom: 8px; font-size: 13px;">Override standard appearance. E.g., <code>.qf-row { background-color: #999 !important; }</code></p>
+                <textarea name="custom_css" style="flex-grow: 1; width: 100%; box-sizing: border-box; font-family: monospace; padding: 10px; background: #111; color: #0f0; border: 1px solid #444; border-radius: 4px; resize: none;"><?= htmlspecialchars($saved_css) ?></textarea>
+            </div>
+
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+        
+				<div class="qf-guide-block">
+                    <h3 style="margin-top: 0; margin-bottom: 15px;">Advanced Icon Guide</h3>
+                    <p style="margin-top: 0; margin-bottom: 15px; font-size: 14px;">The auto-scanner tries to find native Unraid icons, but you have three powerful ways to customize them manually:</p>
+
+                    <h4 style="margin-top: 0; margin-bottom: 5px; font-size: 14px;">1. Google Noto Emojis (Recommended)</h4>
+                    <p style="margin-top: 0; margin-bottom: 10px; font-size: 13px; line-height: 1.5;">
+                        You can use standard emojis, and the plugin will automatically upgrade them to the high-quality <strong>Google Noto Color</strong> style. This ensures consistent, premium 3D-style icons across all devices (Windows, Mac, iOS, Android).
+                    </p>
+                    <ul style="margin-top: 0px; list-style-type: disc; padding-left: 20px; font-size: 13px; line-height: 1.5; margin-bottom: 15px;">
+                        <li style="margin-bottom: 6px;"><strong>Quick Pick:</strong> Press <code>Win + .</code> (Windows) or <code>Cmd + Ctrl + Space</code> (Mac) to open your OS emoji keyboard and insert directly.</li>
+                        <li><strong>Browse online:</strong> Visit <a href="https://emojiterra.com/" target="_blank" style="color: #4da6ff; text-decoration: none;">emojiterra.com</a> to browse icons. You will see how the emoji looks on different platforms (Apple, Google, etc.). Simply click "Copy" on the raw Unicode character and paste it here. <br><em>Note: Even if it temporarily looks like the standard Windows/Mac flat emoji when you paste it into the box, the plugin will automatically transform it into the beautiful Google version in the live preview and final menu!</em></li>
+                    </ul>
+
+                    <h4 style="margin-top: 0; margin-bottom: 5px; font-size: 14px;">2. FontAwesome & Custom Images</h4>
+                    <ul style="margin-top: 0px; list-style-type: disc; padding-left: 20px; font-size: 13px; line-height: 1.5; margin-bottom: 0;">
+                        <li style="margin-bottom: 5px;"><strong>FontAwesome:</strong> Type any FA class (e.g., <code>fa-desktop</code>).</li>
+                        <li style="margin-bottom: 5px;"><strong>Images:</strong> Paste the full path to a PNG/SVG (e.g., <code>/plugins/name/icon.png</code>).</li>
+                        <li><strong>Inspect Element:</strong> You can right-click any native Unraid header icon, click <strong>Inspect</strong>, and copy either its <code>fa-</code> class or image <code>src</code> path.</li>
+                    </ul>
+                </div>
+
+
+
+                <div style="display: flex; flex-direction: column; flex-grow: 1;">
+                    <h3 style="margin-top: 0; margin-bottom: 5px; font-size: 16px;">User Notes</h3>
+                    <textarea name="user_notes" class="qf-notes-area" style="resize: none; font-size: 12px;" placeholder="Save snippets or script arguments..."><?= htmlspecialchars($saved_notes) ?></textarea>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+
+
+<script>
+
+
+$(function() {
+    // 1. Drag and Drop Sorting
+    if (typeof $.fn.sortable !== 'undefined') {
+        $("#fav-table-body").sortable({
+            handle: '.drag-handle',
+            cursor: 'grabbing',
+            axis: 'y',
+            opacity: 0.8
+        });
+    }
+
+    // 2. Bulletproof Hybrid Color Picker Sync
+    // When the color box changes...
+    $(document).on('input change', '.color-picker-sync', function() {
+        var hex = $(this).val().toUpperCase();
+        $(this).siblings('.color-text-sync').val(hex);
+    });
+    
+    // When the text box changes...
+    $(document).on('input keyup', '.color-text-sync', function() {
+        var hex = $(this).val().trim();
+        
+        // Auto-add the # if the user forgets it
+        if (hex.length > 0 && hex.charAt(0) !== '#') {
+            hex = '#' + hex;
+        }
+        
+        // Standard HTML color inputs require exactly 6 valid characters (plus the #)
+        if(/^#[0-9A-F]{6}$/i.test(hex)) {
+            $(this).siblings('.color-picker-sync').val(hex);
+        }
+    });
+});
+
+// 3. Table Functions (Preview & Fetch Icon)
+function updatePreview(inputElement) {
+    var val = $(inputElement).val().trim();
+    var wrapper = $(inputElement).siblings('.preview-wrapper');
+    
+    // 1. Default (Star)
+    if (val === '') {
+        wrapper.html('<i class="fa fa-star" style="width:28px; text-align:center; font-size:24px;"></i>');
+        return;
+    }
+    
+    // 2. Images & URLs
+    if (val.includes('/') || val.includes('.')) {
+        wrapper.html('<img src="' + val + '" style="width:28px; height:28px; object-fit:contain;">');
+        return;
+    }
+    
+    // 3. Native Unraid FontAwesome 4 Format
+    if (/^[a-zA-Z0-9\-\s]+$/.test(val)) {
+        var cleanName = val.trim();
+        
+        // Strip off "fa-" if the user typed it
+        if (cleanName.startsWith('fa-')) {
+            cleanName = cleanName.substring(3);
+        }
+        
+        // Rebuild perfectly for Unraid
+        wrapper.html('<i class="fa fa-' + cleanName + '" style="width:28px; text-align:center; font-size:24px;"></i>');
+        return;
+    }
+    
+    // 4. Emojis
+    wrapper.html('<span style="font-family: \'Noto Color Emoji\', sans-serif; font-size: 24px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
+}
+
+
+function updatePreview(inputElement) {
+    var val = $(inputElement).val().trim();
+    var wrapper = $(inputElement).siblings('.preview-wrapper');
+    
+    // 1. Default (Star)
+    if (val === '') {
+        wrapper.html('<i class="fa fa-star" style="width:28px; text-align:center; font-size:24px;"></i>');
+        return;
+    }
+    
+    // 2. Images & URLs
+    if (val.includes('/') || val.includes('.')) {
+        wrapper.html('<img src="' + val + '" style="width:28px; height:28px; object-fit:contain;">');
+        return;
+    }
+    
+    // 3. Native Unraid FontAwesome 4 Format
+    if (/^[a-zA-Z0-9\-\s]+$/.test(val)) {
+        var cleanName = val.trim();
+        
+        // If the user typed "fa-" at the beginning, strip it off temporarily
+        if (cleanName.startsWith('fa-')) {
+            cleanName = cleanName.substring(3);
+        }
+        
+        // Rebuild it to exactly match the Unraid core HTML you just inspected
+        wrapper.html('<i class="fa fa-' + cleanName + '" style="width:28px; text-align:center; font-size:24px;"></i>');
+        return;
+    }
+    
+    // 4. Emojis
+    wrapper.html('<span style="font-family: \'Noto Color Emoji\', sans-serif; font-size: 24px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
+}
+
+
+function addRow() {
+    var newRow = `<tr class="qf-row">
+        <td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
+        <td style="max-width: 140px;"><input type="text" name="category[]" placeholder="Category" required class="qf-input"></td>
+        <td style="max-width: 140px;"><input type="text" name="label[]" placeholder="Label" required class="qf-input"></td>
+        <td><input type="text" name="path[]" placeholder="Folder or URL" required class="qf-input path-input"></td>
+        <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span class="preview-wrapper"><i class="fa fa-star"></i></span>
+                <input type="text" name="icon[]" placeholder="fa-star" required class="qf-input" oninput="updatePreview(this)">
+            </div>
+        </td>
+        <td>
+		
+			<select name="action_type[]" class="qf-input">
+                <option value="_self">Same Tab</option>
+                <option value="_blank">New Tab</option>
+                <option value="script_modal">Run Script (Console)</option>
+                <option value="script_background">Run Background</option>
+                <option value="script_log">User Script Log</option>
+            </select>
+
+			
+			
+        </td>
+        <td class="qf-row-right-end" style="text-align:center;">
+            <button type="button" class="qf-btn-remove" onclick="$(this).closest('tr').remove();"><i class="fa fa-times"></i></button>
+        </td>
+    </tr>`;
+
+$('#fav-table-body').append(newRow);
+}
+
+// 4. Appearance Backup & Reset Functions
+function copyAppearanceSettings() {
+    var text = "--- Theme Backup ---\n";
+    text += "Header Title: " + $('input[name="menu_title"]').val() + "\n";
+    text += "Icon Size: " + $('input[name="icon_size"]').val() + "px\n";
+    text += "Grid Columns: " + $('input[name="grid_columns"]').val() + "\n";
+    text += "Menu Width: " + $('input[name="menu_width"]').val() + "px\n";
+    text += "Show Header: " + $('select[name="show_header"]').val() + "\n";
+    text += "Menu BG: " + $('input[name="bg_color"]').val() + "\n";
+    text += "Hover BG: " + $('input[name="hover_color"]').val() + "\n";
+    text += "Header Font: " + $('input[name="header_color"]').val() + "\n";
+    text += "Header Line: " + $('input[name="header_line"]').val() + "\n";
+    text += "Section Font: " + $('input[name="section_title_color"]').val() + "\n";
+    text += "Section Line: " + $('input[name="section_border_color"]').val() + "\n";
+    text += "Icon (FA): " + $('input[name="icon_color"]').val() + "\n";
+    text += "Label Font: " + $('input[name="label_color"]').val();
+
+    // Fallback method for local HTTP Unraid connections
+    var tempTextArea = document.createElement("textarea");
+    tempTextArea.value = text;
+    // Move it off-screen so it doesn't cause a layout jump
+    tempTextArea.style.position = "absolute";
+    tempTextArea.style.left = "-9999px";
+    document.body.appendChild(tempTextArea);
+    tempTextArea.select();
+    tempTextArea.setSelectionRange(0, 99999); // For mobile compatibility
+
+    try {
+        document.execCommand("copy");
+        var btn = $('#btn-copy-app');
+        var originalText = btn.html();
+        btn.html('✅ Copied!');
+        btn.css('background', 'rgba(0, 255, 0, 0.1)');
+        setTimeout(function() { 
+            btn.html(originalText); 
+            btn.css('background', 'rgba(255,255,255,0.08)');
+        }, 2000);
+    } catch (err) {
+        alert("Clipboard copy failed. Your browser may be blocking it.");
+    }
+
+    // Clean up the invisible text area
+    document.body.removeChild(tempTextArea);
+}
+
+function resetAppearanceDefaults() {
+    swal({
+        title: "Reset Appearance?",
+        text: "This will reset all styling back to the default theme.\n\n(You will still need to click 'Save Settings' afterward to make it permanent.)",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ff4444",
+        confirmButtonText: "Yes, reset it!",
+        closeOnConfirm: true
+    }, function() {
+        // Reset Standard Inputs
+        $('input[name="menu_title"]').val('Quick Favorites');
+        $('input[name="icon_size"]').val('32');
+        $('input[name="grid_columns"]').val('4');
+        $('input[name="menu_width"]').val('480');
+        $('select[name="show_header"]').val('yes');
+
+        // Helper function to reset both the text box and the color picker block safely
+        function setCol(name, val) {
+            var textInput = $('input[name="'+name+'"]');
+            textInput.val(val.toUpperCase());
+            textInput.siblings('.color-picker-sync').val(val);
+        }
+
+        // Reset Colors
+        setCol('bg_color', '#1c1c1c');
+        setCol('hover_color', '#333333');
+        setCol('header_color', '#ffca28');
+        setCol('header_line', '#333333');
+        setCol('section_title_color', '#888888');
+        setCol('section_border_color', '#333333');
+        setCol('icon_color', '#e0e0e0');
+        setCol('label_color', '#cccccc');
+    });
+}
+
+</script>
