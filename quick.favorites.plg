@@ -26,6 +26,10 @@ Quick Favorites allows you to create a custom dropdown menu in the Unraid header
 </CHANGES>
 
 
+<FILE Name="/usr/local/emhttp/plugins/&name;/&name;.png">
+  <URL>https://raw.githubusercontent.com/&author;/&name;/refs/heads/main/icon.png</URL>
+</FILE>
+
 <FILE Name="/usr/local/emhttp/plugins/&name;/QuickFavorites.page">
 <INLINE>
 <![CDATA[
