@@ -1,17 +1,10 @@
-**Quick Favorites**
+# 🌟 Quick Favorites for Unraid
 
 A custom favorites menu for the Unraid header. Easily navigate to pages, Docker containers, and User Scripts with live previews and icon support.
 
-Stop clicking through endless tabs to find your most-used settings, Docker containers, or User Scripts. Put them all in one place, accessible from anywhere in your Unraid dashboard.
-
----
-
-
-
-# 🌟 Quick Favorites for Unraid
-
 Supercharge your Unraid navigation! **Quick Favorites** allows you to build a beautifully customized, lightning-fast pop-up menu right into your Unraid header. This takes the existing "Favorites" and replaces it with our Quick Favorites pop-up.
 
+Stop clicking through endless tabs to find your most-used settings, Docker containers, or User Scripts. Put them all in one place, accessible from anywhere in your Unraid dashboard.
 
 ![Quick Favorites Menu](screenshots/menu-open.png)
 
@@ -56,4 +49,4 @@ Installing Quick Favorites is incredibly simple.
 4. Paste the URL below into the text box and click **Install**:
 
 ```text
-https://raw.githubusercontent.com/hernandito/quick.favorites/refs/heads/main/quick.favorites.plg
+https://raw.githubusercontent.com/hernandito/quick.favorites/main/quick.favorites.plg

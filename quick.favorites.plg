@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.03.27c">
+<!ENTITY version "2026.03.27d">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,6 +16,10 @@
         min="6.12.0">
 
 <CHANGES>
+
+###2026.03.27d
+- Final FIX to the plugin's display on unRAID's Plugins page.
+
 
 ###2026.03.27c
 - Still trying to fix README descrition so it reads properly in unRDAID's Plugins page.
@@ -48,12 +52,13 @@
 </FILE>
 
 <FILE Name="&plugdir;/README.md">
-  <URL>https://raw.githubusercontent.com/&github;/main/README.md</URL>
+  <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
 <FILE Name="&plugdir;/&name;.png">
   <URL>https://raw.githubusercontent.com/&github;/main/icon.png</URL>
 </FILE>
+
 
 <FILE Run="/bin/bash">
 <INLINE>

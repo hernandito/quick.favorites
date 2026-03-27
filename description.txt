@@ -1,0 +1,3 @@
+####Quick.Favorites###
+Quick Favorites is custom favorites menu for the Unraid header. It brings up a quick pop-up to directly navigate where you want to go. Easily navigate to pages, Docker containers, external links, and User Scripts with live previews and comprehensive icon support.
+
