@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.03.27a">
+<!ENTITY version "2026.03.27b">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,6 +16,11 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.03.27b
+- Trying to fix README descrition so it reads properly in unRDAID's Plugins page.
+- Testing auto updates version upgrades.
+
+
 ###2026.03.27a
 - Initial public packaging of Quick Favorites as a .plg installer.
 - Installs webGUI files, injects the global include and JavaScript, and preserves persistent user settings on uninstall.
