@@ -1,4 +1,10 @@
-A custom favorites menu for the Unraid header. Easily navigate to pages, Docker containers, and User Scripts with live previews and icon support.
+
+Quick Favorites — A custom favorites menu for the Unraid header. Easily navigate to pages, Docker containers, and User Scripts with live previews and icon support.
+
+---
+
+## Overview
+
 
 # 🌟 Quick Favorites for Unraid
 

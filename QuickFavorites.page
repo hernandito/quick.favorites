@@ -278,7 +278,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
         <ul style="margin-bottom:0; padding-left:20px; line-height: 2.4rem;">
             <li><strong>UserScripts:</strong> For the "Path", simply enter the <b>Folder Name</b> of your script (e.g., <code > Daily Backup </code>).</li>
             <li><strong>Spaces:</strong> Folder names with spaces (e.g., <code>My Script</code>) are supported, but avoiding spaces is best practice for Linux paths.</li>
-            <li><strong>FontAwesome:</strong> Use <a href="https://fontawesome.com/v5/search?m=free" target="_blank" class="qf-fa-link">FontAwesome 5 Free</a> classes (e.g., <code>fa-docker</code>).</li>
+            <li><strong>FontAwesome:</strong> Unraid uses <b>FontAwesome 4.7 </b>classes. Find compatible icon names on the <a href="https://fontawesome.com/v4/icons/" target="_blank" class="qf-fa-link">v.4 Cheatsheet</a> (e.g., <code>fa-docker</code>).</li>
             <li><strong>Custom Images:</strong> Paste a direct image URL or a local unRAID path (e.g., <code>/plugins/nvidia-driver/images/icon.png</code>).</li>
         </ul>
     </div>
