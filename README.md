@@ -7,9 +7,9 @@ A custom favorites menu for the Unraid header. Easily navigate to pages, Docker 
 <details>
 
 
-<summary>
-# 🌟 Quick Favorites for Unraid
 
+# 🌟 Quick Favorites for Unraid
+<summary>
 
 Supercharge your Unraid navigation! **Quick Favorites** allows you to build a beautifully customized, lightning-fast pop-up menu right into your Unraid header. This takes the existing "Favorites" and replaces it with our Quick Favorites pop-up.
 
