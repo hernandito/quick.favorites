@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.03.27b">
+<!ENTITY version "2026.03.27c">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,6 +16,11 @@
         min="6.12.0">
 
 <CHANGES>
+
+###2026.03.27c
+- Still trying to fix README descrition so it reads properly in unRDAID's Plugins page.
+
+
 ###2026.03.27b
 - Trying to fix README descrition so it reads properly in unRDAID's Plugins page.
 - Testing auto updates version upgrades.
