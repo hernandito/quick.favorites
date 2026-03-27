@@ -4,7 +4,7 @@ A custom favorites menu for the Unraid header. Easily navigate to pages, Docker 
 
 ---
 
-<details>
+
 
 
 
