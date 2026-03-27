@@ -316,7 +316,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
 						
 						<span class="preview-wrapper">
                             <?php if (strpos($data['icon'], '/') !== false || strpos($data['icon'], '.') !== false): ?>
-                                <img src="<?= htmlspecialchars($data['icon']) ?>" style="width:28px; height:28px;">
+                                <img src="<?= htmlspecialchars($data['icon']) ?>" style="width:height:28px;;height:height:28px;;">
                             <?php elseif (preg_match('/^[a-zA-Z0-9\-]+$/', $data['icon'])): ?>
                                 <?php $fa = (strpos($data['icon'], 'fa-') === 0) ? $data['icon'] : 'fa-' . $data['icon']; ?>
                                 <i class="fa <?= htmlspecialchars($fa) ?>" style="width:height:28px;; text-align:center;"></i>
@@ -547,71 +547,41 @@ function updatePreview(inputElement) {
     var val = $(inputElement).val().trim();
     var wrapper = $(inputElement).siblings('.preview-wrapper');
     
-    // 1. Default (Star)
-    if (val === '') {
-        wrapper.html('<i class="fa fa-star" style="width:28px; text-align:center; font-size:24px;"></i>');
-        return;
-    }
-    
-    // 2. Images & URLs
     if (val.includes('/') || val.includes('.')) {
-        wrapper.html('<img src="' + val + '" style="width:28px; height:28px; object-fit:contain;">');
-        return;
+        wrapper.html('<img src="' + val + '" style="width:28px; height:28px;">');
+    } else if (/^[a-zA-Z0-9\-]+$/.test(val)) {
+        if (!val.startsWith('fa-') && val !== '') val = 'fa-' + val;
+        wrapper.html('<i class="fa ' + val + '" style="width:28px; text-align:center;"></i>');
+    } else {
+        // Locked to 28x28 to match images and FA
+        wrapper.html('<span style="font-family: \'Noto Color Emoji\', sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
     }
-    
-    // 3. Native Unraid FontAwesome 4 Format
-    if (/^[a-zA-Z0-9\-\s]+$/.test(val)) {
-        var cleanName = val.trim();
-        
-        // Strip off "fa-" if the user typed it
-        if (cleanName.startsWith('fa-')) {
-            cleanName = cleanName.substring(3);
-        }
-        
-        // Rebuild perfectly for Unraid
-        wrapper.html('<i class="fa fa-' + cleanName + '" style="width:28px; text-align:center; font-size:24px;"></i>');
-        return;
-    }
-    
-    // 4. Emojis
-    wrapper.html('<span style="font-family: \'Noto Color Emoji\', sans-serif; font-size: 24px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
 }
 
 
-function updatePreview(inputElement) {
-    var val = $(inputElement).val().trim();
-    var wrapper = $(inputElement).siblings('.preview-wrapper');
+function fetchNativeIcon(btnElement) {
+    var row = $(btnElement).closest('tr');
+    var path = row.find('.path-input').val().trim();
+    var iconInput = row.find('input[name="icon[]"]');
+    var wrapper = iconInput.siblings('.preview-wrapper');
     
-    // 1. Default (Star)
-    if (val === '') {
-        wrapper.html('<i class="fa fa-star" style="width:28px; text-align:center; font-size:24px;"></i>');
+    if (path === '') {
+        alert("Please enter a path/URL first!");
         return;
     }
-    
-    // 2. Images & URLs
-    if (val.includes('/') || val.includes('.')) {
-        wrapper.html('<img src="' + val + '" style="width:28px; height:28px; object-fit:contain;">');
-        return;
-    }
-    
-    // 3. Native Unraid FontAwesome 4 Format
-    if (/^[a-zA-Z0-9\-\s]+$/.test(val)) {
-        var cleanName = val.trim();
-        
-        // If the user typed "fa-" at the beginning, strip it off temporarily
-        if (cleanName.startsWith('fa-')) {
-            cleanName = cleanName.substring(3);
-        }
-        
-        // Rebuild it to exactly match the Unraid core HTML you just inspected
-        wrapper.html('<i class="fa fa-' + cleanName + '" style="width:28px; text-align:center; font-size:24px;"></i>');
-        return;
-    }
-    
-    // 4. Emojis
-    wrapper.html('<span style="font-family: \'Noto Color Emoji\', sans-serif; font-size: 24px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
-}
 
+    wrapper.html('<i class="fa fa-spinner fa-spin"></i>');
+    
+    $.post('/Settings/QuickFavorites', { action: 'get_native_icon', path: path }, function(response) {
+        var finalIcon = response.trim();
+        if (finalIcon === '' || finalIcon.includes('spin')) finalIcon = 'fa-star';
+        iconInput.val(finalIcon);
+        updatePreview(iconInput);
+    }).fail(function() {
+        iconInput.val('fa-star');
+        updatePreview(iconInput);
+    });
+}
 
 function addRow() {
     var newRow = `<tr class="qf-row">

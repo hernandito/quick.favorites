@@ -1,0 +1,15 @@
+{
+    "menu_title": "Quick Favorites",
+    "icon_size": "42",
+    "grid_columns": "5",
+    "menu_width": "480",
+    "show_header": "no",
+    "hover_color": "#333333",
+    "bg_color": "#000000",
+    "header_color": "#FFCA28",
+    "header_line": "#333333",
+    "section_title_color": "#AAAAAA",
+    "section_border_color": "#333333",
+    "icon_color": "#FFCA28",
+    "label_color": "#CCCCCC"
+}

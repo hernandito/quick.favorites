@@ -1,0 +1,9 @@
+{
+    "/Settings/QuickFavorites": {
+        "category": "System",
+        "label": "Quick Favorites",
+        "icon": "fa-star",
+        "action": "_self"
+    }
+	
+}

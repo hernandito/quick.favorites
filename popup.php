@@ -10,19 +10,27 @@ $grouped_favs = [];
 if (file_exists($json_file)) {
     $raw = json_decode(file_get_contents($json_file), true);
     if (is_array($raw)) {
-        foreach ($raw as $path => $data) {
+
+
+		foreach ($raw as $key => $data) {
             if (is_string($data)) {
-                $data = ['category' => 'General', 'label' => $data, 'icon' => 'fa-star', 'action' => '_self'];
+                $data = ['category' => 'General', 'label' => $data, 'icon' => 'fa-star', 'action' => '_self', 'path' => $key];
+            } else {
+                if (!isset($data['path'])) {
+                    $data['path'] = $key;
+                }
             }
             $cat = !empty($data['category']) ? $data['category'] : 'Uncategorized';
             if (!isset($grouped_favs[$cat])) { $grouped_favs[$cat] = []; }
-            $data['path'] = $path; 
             $grouped_favs[$cat][] = $data;
         }
+		
+		
+		
     }
 }
 
-// 2. Load Appearance Settings
+// 2. Load Appearance Settings (Fixes the "Blank Menu" issue)
 $appearance_file = "$cfg_dir/appearance.json";
 $defaults = [
     'menu_title' => 'Quick Favorites',
@@ -31,15 +39,12 @@ $defaults = [
     'header_color' => '#ffca28',
     'header_line' => '#333333',
     'section_title_color' => '#888888',
-    'section_border_color' => '#333333',
-    'icon_color' => '#e0e0e0',
-    'label_color' => '#cccccc',
+    'text_color' => '#e0e0e0',
     'grid_columns' => '4',
     'menu_width' => '480',
     'hover_color' => '#333333',
     'show_header' => 'yes'
 ];
-
 $style = file_exists($appearance_file) ? array_merge($defaults, json_decode(file_get_contents($appearance_file), true)) : $defaults;
 $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
 ?>
@@ -56,7 +61,10 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
         border-radius:8px; 
         box-shadow:0 12px 30px rgba(0,0,0,0.8); 
         width: <?= htmlspecialchars($style['menu_width'] ?? '480') ?>px; 
-        padding: 10px 20px;
+        padding-top: 10px; 
+        padding-bottom: 10px;
+        padding-left: 20px;
+        padding-right: 20px;
         box-sizing:border-box;
         background: <?= $style['bg_color'] ?> !important; 
     }
@@ -69,20 +77,20 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
         font-size: 14px; 
         text-transform: uppercase; 
         letter-spacing: 1px; 
-        text-align: left;
+        text-align: left; /* Updated to Left Align */
         color: <?= $style['header_color'] ?> !important;
         border-bottom: 1px solid <?= $style['header_line'] ?> !important;
         <?php if (($style['show_header'] ?? 'yes') === 'no') echo 'display: none !important;'; ?>
     }
 
-    .qf-section { margin-bottom: 12px; }
+    .qf-section { margin-bottom: 4px; }
     .qf-section:last-child { margin-bottom: 0; }
     
     /* Dynamic Section/Category Styling */
     .qf-section-title { 
         font-size: 12px; 
-        margin-bottom: 0px; 
-        padding-bottom: 1px; 
+        margin-bottom: 0px;  /* Updated */
+        padding-bottom: 1px; /* Updated */
         text-transform: uppercase; 
         letter-spacing: 0.5px; 
         color: <?= $style['section_title_color'] ?> !important;
@@ -92,7 +100,7 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
     .qf-grid { 
         display: grid; 
         grid-template-columns: repeat(<?= htmlspecialchars($style['grid_columns'] ?? '4') ?>, 1fr); 
-        gap: 12px 0px; 
+        gap: 0px 0px; /* Updated */
         justify-items: center; 
     }
     
@@ -109,11 +117,12 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
         box-sizing:border-box; 
     }
     .qf-item:hover { 
+        /* Now uses your configurable Hover Color */
         background: <?= htmlspecialchars($style['hover_color'] ?? '#333333') ?> !important; 
         text-decoration: none !important; 
     }
 
-    /* Match Icon Sizes */
+    /* Match Icon Sizes (FA and Custom Image) */
     .qf-icon-fa { 
         margin-bottom: 8px; 
         font-size: <?= $style['icon_size'] ?>px !important;
@@ -142,16 +151,15 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
     <div class="qf-main-header"><?= htmlspecialchars($style['menu_title']) ?></div>
     
     <?php if (empty($grouped_favs)): ?>
-        <div style="color:#888; font-size:12px; padding:20px; text-align:center;">
-            No favorites found.<br>Add them in Settings > Quick Favorites.
-        </div>
+        <div style="color:#888; font-size:12px; padding:20px; text-align:center;">Add links in Settings > Quick Favorites</div>
     <?php else: ?>
+        
         <?php foreach ($grouped_favs as $category => $items): ?>
             <div class="qf-section">
                 <div class="qf-section-title"><?= htmlspecialchars($category) ?></div>
                 <div class="qf-grid">
                     <?php foreach ($items as $item): 
-                        $isScript = ($item['action'] === 'script_modal' || $item['action'] === 'script_background' || $item['action'] === 'script_log');
+                        $isScript = ($item['action'] === 'script_modal' || $item['action'] === 'script_background');
                         $href = $isScript ? '#' : htmlspecialchars($item['path']);
                     ?>
                         <a href="<?= $href ?>" 
@@ -159,13 +167,13 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
                            data-path="<?= htmlspecialchars($item['path']) ?>" 
                            class="qf-item">
                             
-                            <?php if (strpos($item['icon'], '/') !== false || strpos($item['icon'], '.') !== false): ?>
+							<?php if (strpos($item['icon'], '/') !== false || strpos($item['icon'], '.') !== false): ?>
                                 <img src="<?= htmlspecialchars($item['icon']) ?>" class="qf-icon-img">
                             <?php elseif (preg_match('/^[a-zA-Z0-9\-]+$/', $item['icon'])): ?>
                                 <?php $fa = (strpos($item['icon'], 'fa-') === 0) ? $item['icon'] : 'fa-' . $item['icon']; ?>
                                 <i class="fa <?= htmlspecialchars($fa) ?> qf-icon-fa"></i>
                             <?php else: ?>
-                                <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: <?= htmlspecialchars($style['icon_size'] ?? '32') ?>px; line-height: 1; display: inline-block; vertical-align: middle; text-align: center; margin-bottom: 8px;"><?= htmlspecialchars($item['icon']) ?></span>
+								<span style="font-family: 'Noto Color Emoji', sans-serif; font-size: <?= htmlspecialchars($style['icon_size'] ?? '32') ?>px; line-height: 1; display: inline-block; vertical-align: middle; text-align: center; margin-bottom: 10px;"><?= htmlspecialchars($item['icon']) ?></span>
                             <?php endif; ?>
                             
                             <span class="qf-label"><?= htmlspecialchars($item['label']) ?></span>
@@ -174,5 +182,6 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
                 </div>
             </div>
         <?php endforeach; ?>
+
     <?php endif; ?>
 </div>

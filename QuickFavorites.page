@@ -105,8 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_favs'])) {
         if ($ic === '' || strpos($ic, 'spin') !== false) $ic = 'fa-star';
         if ($cat === '') $cat = 'Uncategorized';
         
-        if ($p !== '' && $l !== '') {
-            $new_favs[$p] = [
+		if ($p !== '' && $l !== '') {
+            $new_favs[] = [
+                'path' => $p,
                 'category' => $cat,
                 'label' => $l,
                 'icon' => $ic,
@@ -148,16 +149,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_favs'])) {
 }
 
 // 3. Load Existing Configuration
+// Load Data
 $favs = [];
 if (file_exists($json_file)) {
     $raw = json_decode(file_get_contents($json_file), true);
     if (is_array($raw)) {
-        foreach ($raw as $p => $data) {
+        foreach ($raw as $key => $data) {
             if (is_string($data)) {
-                $favs[$p] = ['category' => 'General', 'label' => $data, 'icon' => 'fa-star', 'action' => '_self'];
+                $data = ['category' => 'General', 'label' => $data, 'icon' => 'fa-star', 'action' => '_self', 'path' => $key];
             } else {
-                $favs[$p] = array_merge(['category' => 'General', 'action' => '_self'], $data);
+                // Backward compatibility for old format
+                if (!isset($data['path'])) {
+                    $data['path'] = $key;
+                }
             }
+            $favs[] = $data; // Push as a flat array item!
         }
     }
 }
@@ -303,12 +309,12 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
 						
 
 			<tbody id="fav-table-body">
-				<?php foreach ($favs as $path => $data): ?>
-				<tr class="qf-row">
-					<td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
-					<td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input"></td>
-					<td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input"></td>
-					<td><input type="text" name="path[]" value="<?= htmlspecialchars($path) ?>" required class="qf-input path-input"></td>
+                <?php foreach ($favs as $index => $data): ?>
+                <tr class="qf-row">
+                    <td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
+                    <td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input"></td>
+                    <td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input"></td>
+                    <td><input type="text" name="path[]" value="<?= htmlspecialchars($data['path']) ?>" required class="qf-input path-input"></td>
 					<td>
 						<div style="display:flex; align-items:center; gap:8px;">
 						

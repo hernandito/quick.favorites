@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.03.27d">
+<!ENTITY version "2026.03.27e">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,6 +16,11 @@
         min="6.12.0">
 
 <CHANGES>
+
+###2026.03.27e
+- Renamed quick.favorites.page to popup.php to avoid Win conflicts.
+- Fix indexing of paths to allow same path on multiple rows.
+
 
 ###2026.03.27d
 - Final FIX to the plugin's display on unRAID's Plugins page.
@@ -39,8 +44,8 @@
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
 </FILE>
 
-<FILE Name="&plugdir;/quick.favorites.page">
-  <URL>https://raw.githubusercontent.com/&github;/main/quick.favorites.page</URL>
+<FILE Name="&plugdir;/popup.php">
+  <URL>https://raw.githubusercontent.com/&github;/main/popup.php</URL>
 </FILE>
 
 <FILE Name="&plugdir;/favs.js">
@@ -130,7 +135,7 @@ if [ -f "$DYNAMIX_TEMPLATE" ]; then
 
   # Wrapper so Unraid processes the PHP in the overlay page
   cat > "$PLUGDIR/include.php" <<'EOF_INCLUDE'
-<?php include "/usr/local/emhttp/plugins/quick.favorites/quick.favorites.page"; ?>
+<?php include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
 EOF_INCLUDE
 
   # Inject the wrapper and Javascript at the bottom of the Dynamix template
