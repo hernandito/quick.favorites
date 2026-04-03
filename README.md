@@ -4,7 +4,7 @@ A custom favorites menu for the unRAIDheader. Easily navigate to pages, Docker c
 
 Supercharge your unRAIDnavigation! **Quick Favorites** allows you to build a beautifully customized, lightning-fast pop-up menu right into your unRAIDheader. This takes the existing "Favorites" and replaces it with our Quick Favorites pop-up.
 
-Stop clicking through endless tabs to find your most-used settings, Docker containers, or User Scripts. Put them all in one place, accessible from anywhere in your unRAIDdashboard.
+Stop clicking through endless tabs to find your most-used settings, Docker containers, or User Scripts. Put them all in one place, accessible from anywhere in your unRAID WebUI.
 
 ![Quick Favorites Menu](screenshots/menu-open.png)
 
