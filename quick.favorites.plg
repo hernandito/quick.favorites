@@ -16,8 +16,8 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27d1
-- Refreshed build: Added Header Mode (Hijack vs Separate Item) and custom Header Labels.
+###2026.08.27f
+- Updated injection schema and header mode mapping.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -44,13 +44,14 @@
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<!-- NATIVE FOOTER INJECTION: Loads popup HTML and injects settings dynamically into JS -->
+<!-- NATIVE FOOTER INJECTION -->
 <FILE Name="&plugdir;/QuickFavorites.inject.page">
 <INLINE>
 <![CDATA[
 Menu="Footer"
+Markdown="false"
 ---
-<?php
+<?
 $qf_conf = "/boot/config/plugins/quick.favorites/appearance.json";
 $qf_settings = file_exists($qf_conf) ? json_decode(file_get_contents($qf_conf), true) : [];
 $qf_mode = $qf_settings['header_mode'] ?? 'hijack';
@@ -62,7 +63,7 @@ var qf_settings = {
     label: "<?= htmlspecialchars($qf_label) ?>"
 };
 </script>
-<?php include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
+<? include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
 <script src="/plugins/quick.favorites/favs.js"></script>
 ]]>
 </INLINE>
@@ -76,7 +77,6 @@ PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 CONF="/boot/config/plugins/$NAME"
 DYNAMIX_TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
 
-# Create config directories and defaults
 if [ ! -d "$CONF" ]; then
   mkdir -p "$CONF"
 fi
@@ -89,9 +89,7 @@ fi
 touch "$CONF/custom.css"
 touch "$CONF/user_notes.txt"
 
-# CLEANUP LEGACY INJECTION
 sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
-rm -f "$PLUGDIR/include.php"
 
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
