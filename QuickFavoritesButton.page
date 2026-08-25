@@ -17,6 +17,12 @@ $qf_conf     = "/boot/config/plugins/quick.favorites/appearance.json";
 $qf_settings = @is_file($qf_conf) ? json_decode(@file_get_contents($qf_conf), true) : [];
 if (!is_array($qf_settings)) $qf_settings = [];
 $qf_label = $qf_settings['header_label'] ?? '⭐⭐';
+
+// Optional tab hiding. Matched on href, not on the visible caption, because tab
+// captions run through Unraid's translation layer and change per locale.
+$qf_hide = [];
+if (($qf_settings['hide_stats'] ?? 'no') === 'yes')     $qf_hide[] = '/Stats';
+if (($qf_settings['hide_favorites'] ?? 'no') === 'yes') $qf_hide[] = '/Favorites';
 ?>
 <style>
 /* Unraid's default-base.css hides label spans inside nav items:
@@ -29,10 +35,14 @@ $qf_label = $qf_settings['header_label'] ?? '⭐⭐';
     white-space: nowrap;
     line-height: 1;
 }
+<?php foreach ($qf_hide as $qf_href): ?>
+#menu .nav-item:has(> a[href="<?= htmlspecialchars($qf_href, ENT_QUOTES) ?>"]) { display: none !important; }
+<?php endforeach; ?>
 </style>
 <script>
 window.qf_settings = {
-  label: <?= json_encode((string)$qf_label, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+  label: <?= json_encode((string)$qf_label, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+  hide: <?= json_encode($qf_hide, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 };
 /* Unraid renders onclick="QuickFavoritesButton()" on the nav item. Define it up
    front so an early click before favs.js binds still opens the menu. */
