@@ -2,23 +2,25 @@
  *
  * Loaded on every page by QuickFavoritesButton.page (Menu="Buttons").
  *
- * Unraid renders our nav item into the right-hand utility group of #menu as:
- *   <div class="nav-item QuickFavoritesButton util">
- *     <a href="#" onclick="QuickFavoritesButton();return false;" title="Quick Favorites">
- *       <b class="fa fa-star system"></b><span>Quick Favorites</span>
- *     </a>
- *   </div>
+ * IMPORTANT rendering note:
+ * Unraid's default-base.css (loaded by every theme) contains the global rule
  *
- * This script moves that element to the END of the left tab strip
- * (#menu .nav-tile, the one holding Dashboard / Main / ... / Tools) so it is the
- * last item on the menu bar, swaps in the user's header label, and wires up the
- * popup. It does NOT depend on Unraid's native "Favorites" tab existing.
+ *     .nav-item a span { display: none; }
+ *
+ * so ANY label wrapped in a <span> inside a nav item is invisible. Unraid's own
+ * tabs put their text directly in the <a> as a bare text node:
+ *
+ *     <div class="nav-item"><a href="/Tools" onclick="initab('/Tools')">Tools</a></div>
+ *
+ * This script does the same. A bare text node is unaffected by both the top-theme
+ * rule above and the sidebar-theme rule (.nav-item a b {display:none}), so the
+ * label stays visible on black, white, azure and gray.
  */
 (function () {
     'use strict';
 
     var PLUGIN = 'quick.favorites';
-    var LABEL = (window.qf_settings && window.qf_settings.label) || '\u2B50\u2B50';
+    var LABEL = String((window.qf_settings && window.qf_settings.label) || '\u2B50\u2B50').trim();
 
     /* ------------------------------------------------------------------ */
     /* 1. Popup payload                                                    */
@@ -62,8 +64,7 @@
     }
 
     function toggleMenu() {
-        var anchor = document.getElementById('qf-custom-btn')
-                  || document.querySelector('#menu .nav-item.QuickFavoritesButton a');
+        var anchor = document.getElementById('qf-custom-btn');
         if (!anchor) return;
 
         loadPopup(function (menu) {
@@ -77,49 +78,56 @@
         });
     }
 
-    // Exposed so the inline onclick Unraid renders can reach it.
     window.qfToggleMenu = toggleMenu;
 
     /* ------------------------------------------------------------------ */
     /* 3. Put the button at the end of the nav bar                         */
     /* ------------------------------------------------------------------ */
 
-    function buildLabel(anchor) {
-        anchor.textContent = '';
-        var trimmed = String(LABEL).trim();
+    function leftNavTile() {
+        var tiles = document.querySelectorAll('#menu .nav-tile');
+        for (var i = 0; i < tiles.length; i++) {
+            if (!tiles[i].classList.contains('right')) return tiles[i];
+        }
+        return null;
+    }
 
-        if (/^(fa-|icon-)[a-z0-9\-]+$/i.test(trimmed)) {
-            var i = document.createElement('b');
-            i.className = (trimmed.indexOf('icon-') === 0) ? trimmed + ' system' : 'fa ' + trimmed + ' system';
-            anchor.appendChild(i);
+    // Fill the anchor the way Unraid fills its own tabs: a bare text node.
+    function applyLabel(anchor) {
+        while (anchor.firstChild) anchor.removeChild(anchor.firstChild);
+
+        if (/^(fa-|icon-)[a-z0-9\-]+$/i.test(LABEL)) {
+            var b = document.createElement('b');
+            b.className = (LABEL.indexOf('icon-') === 0) ? LABEL + ' system' : 'fa ' + LABEL + ' system';
+            anchor.appendChild(b);
         } else {
-            var span = document.createElement('span');
-            span.className = 'qf-nav-label';
-            span.textContent = trimmed;
-            anchor.appendChild(span);
+            // Bare text node - NOT wrapped in <span>, which Unraid's CSS hides.
+            anchor.appendChild(document.createTextNode(LABEL));
         }
     }
 
     function placeButton() {
-        var item = document.querySelector('#menu .nav-item.QuickFavoritesButton');
-        if (!item) return false;
+        var tile = leftNavTile();
+        if (!tile) return false;
 
-        // The left tab strip is the .nav-tile WITHOUT the "right" class.
-        var tiles = document.querySelectorAll('#menu .nav-tile');
-        var leftTile = null;
-        for (var i = 0; i < tiles.length; i++) {
-            if (!tiles[i].classList.contains('right')) { leftTile = tiles[i]; break; }
+        var item = document.querySelector('#menu .nav-item.QuickFavoritesButton')
+                || document.querySelector('#menu .nav-item.qf-nav-item');
+
+        // If Unraid did not render our nav item for any reason, build one.
+        if (!item) {
+            item = document.createElement('div');
+            item.className = 'nav-item';
+            item.appendChild(document.createElement('a'));
         }
-        if (!leftTile) leftTile = item.parentNode;
 
-        // Move to the very end of the tab strip -> last item on the menu bar.
-        if (leftTile.lastElementChild !== item) leftTile.appendChild(item);
-
-        item.classList.remove('util');   // drop the right-hand utility icon styling
+        item.classList.remove('util');          // drop right-hand utility icon styling
         item.classList.add('qf-nav-item');
 
+        // Move to the very end of the tab strip -> last item on the menu bar.
+        if (item.parentNode !== tile || tile.lastElementChild !== item) tile.appendChild(item);
+
         var anchor = item.querySelector('a');
-        if (!anchor) return false;
+        if (!anchor) { anchor = document.createElement('a'); item.appendChild(anchor); }
 
         if (!anchor._qfReady) {
             anchor._qfReady = true;
@@ -127,7 +135,7 @@
             anchor.setAttribute('href', '#');
             anchor.setAttribute('title', 'Quick Favorites');
             anchor.removeAttribute('onclick');
-            buildLabel(anchor);
+            applyLabel(anchor);
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -138,11 +146,9 @@
     }
 
     function init() {
-        if (placeButton()) {
-            loadPopup();       // warm the payload so the first click is instant
-            return true;
-        }
-        return false;
+        if (!placeButton()) return false;
+        loadPopup();                 // warm the payload so the first click is instant
+        return true;
     }
 
     if (!init()) {

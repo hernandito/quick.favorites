@@ -5,19 +5,31 @@ Icon="fa-star"
 <?php
 /* Quick Favorites - global header hook.
  *
- * Menu="Buttons" is Unraid's supported mechanism for a plugin that needs to
- * appear on EVERY page: the body of this file is emitted inside <head> on every
- * page render, and Unraid also renders a <div class="nav-item QuickFavoritesButton util">
- * into the navigation bar for us. favs.js then relocates that nav-item to the
- * end of the tab strip and binds the popup to it.
+ * Menu="Buttons" is Unraid's supported mechanism for a plugin that needs to run
+ * on EVERY page: the body of this file is emitted on every page render, and
+ * Unraid also renders a <div class="nav-item QuickFavoritesButton util"> into the
+ * navigation bar for us. favs.js then relocates that nav-item to the end of the
+ * tab strip and binds the popup to it.
  *
- * Nothing here touches an Unraid core file, so it survives reboots and OS upgrades.
+ * Nothing here touches an Unraid core file, so it survives reboots and upgrades.
  */
 $qf_conf     = "/boot/config/plugins/quick.favorites/appearance.json";
 $qf_settings = @is_file($qf_conf) ? json_decode(@file_get_contents($qf_conf), true) : [];
 if (!is_array($qf_settings)) $qf_settings = [];
 $qf_label = $qf_settings['header_label'] ?? '⭐⭐';
 ?>
+<style>
+/* Unraid's default-base.css hides label spans inside nav items:
+       .nav-item a span { display: none; }
+   favs.js writes a bare text node instead, but this keeps the button visible
+   even if a span ends up in there. */
+#menu .nav-item.qf-nav-item a span { display: inline !important; }
+#menu .nav-item.qf-nav-item a {
+    text-transform: none;
+    white-space: nowrap;
+    line-height: 1;
+}
+</style>
 <script>
 window.qf_settings = {
   label: <?= json_encode((string)$qf_label, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
