@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.03.27e">
+<!ENTITY version "2026.08.25">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,28 +16,8 @@
         min="6.12.0">
 
 <CHANGES>
-
-###2026.03.27e
-- Renamed quick.favorites.page to popup.php to avoid Win conflicts.
-- Fix indexing of paths to allow same path on multiple rows.
-
-
-###2026.03.27d
-- Final FIX to the plugin's display on unRAID's Plugins page.
-
-
-###2026.03.27c
-- Still trying to fix README descrition so it reads properly in unRDAID's Plugins page.
-
-
-###2026.03.27b
-- Trying to fix README descrition so it reads properly in unRDAID's Plugins page.
-- Testing auto updates version upgrades.
-
-
-###2026.03.27a
-- Initial public packaging of Quick Favorites as a .plg installer.
-- Installs webGUI files, injects the global include and JavaScript, and preserves persistent user settings on uninstall.
+###2026.08.25
+- Refactored core injection: Moved from template.php scripting to native Unraid .page injection.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -56,14 +36,26 @@
   <URL>https://raw.githubusercontent.com/&github;/main/log_api.php</URL>
 </FILE>
 
+<FILE Name="&plugdir;/icon.png">
+  <URL>https://raw.githubusercontent.com/&github;/main/icon.png</URL>
+</FILE>
+
 <FILE Name="&plugdir;/README.md">
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<FILE Name="&plugdir;/&name;.png">
-  <URL>https://raw.githubusercontent.com/&github;/main/icon.png</URL>
+<!-- NATIVE INJECTION: This file tells Unraid to load our scripts on every page natively -->
+<FILE Name="&plugdir;/QuickFavorites.inject.page">
+<INLINE>
+<![CDATA[
+Menu="Buttons"
+Link="nav-user"
+---
+<?php include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
+<script src="/plugins/quick.favorites/favs.js"></script>
+]]>
+</INLINE>
 </FILE>
-
 
 <FILE Run="/bin/bash">
 <INLINE>
@@ -72,86 +64,31 @@ NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 CONF="/boot/config/plugins/$NAME"
 DYNAMIX_TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
-LEGACY_TEMPLATE="/usr/local/emhttp/webGui/template.php"
 
-mkdir -p "$PLUGDIR"
-mkdir -p "$CONF"
-
-# Create persistent default files only when absent
+# Create config directories and defaults
+if [ ! -d "$CONF" ]; then
+  mkdir -p "$CONF"
+fi
 if [ ! -f "$CONF/appearance.json" ]; then
-cat > "$CONF/appearance.json" <<'EOF_APPEARANCE'
-{
-    "menu_title": "Quick Favorites",
-    "icon_size": "42",
-    "grid_columns": "5",
-    "menu_width": "480",
-    "show_header": "no",
-    "hover_color": "#333333",
-    "bg_color": "#000000",
-    "header_color": "#FFCA28",
-    "header_line": "#333333",
-    "section_title_color": "#AAAAAA",
-    "section_border_color": "#333333",
-    "icon_color": "#FFCA28",
-    "label_color": "#CCCCCC"
-}
-EOF_APPEARANCE
+  echo '{"menu_title":"Quick Favorites","icon_size":"32","bg_color":"#1c1c1c","header_color":"#ffca28","header_line":"#333333","section_title_color":"#888888","text_color":"#e0e0e0","grid_columns":"4","menu_width":"480","show_header":"yes","hover_color":"#333333"}' > "$CONF/appearance.json"
 fi
-
 if [ ! -f "$CONF/favorites.json" ]; then
-cat > "$CONF/favorites.json" <<'EOF_FAVORITES'
-{
-    "/Settings/QuickFavorites": {
-        "category": "System",
-        "label": "Quick Favorites",
-        "icon": "fa-star",
-        "action": "_self"
-    }
-}
-EOF_FAVORITES
+  echo '[{"path":"\/Settings\/QuickFavorites","category":"General","label":"Quick Fav Settings","icon":"fa-star","action":"_self"}]' > "$CONF/favorites.json"
 fi
+touch "$CONF/custom.css"
+touch "$CONF/user_notes.txt"
 
-if [ ! -f "$CONF/custom.css" ]; then
-cat > "$CONF/custom.css" <<'EOF_CUSTOMCSS'
-
-EOF_CUSTOMCSS
-fi
-
-if [ ! -f "$CONF/user_notes.txt" ]; then
-cat > "$CONF/user_notes.txt" <<'EOF_USERNOTES'
-
-EOF_USERNOTES
-fi
-
-# Clean old injections first to prevent duplicates or leftovers from the old plugin name
-if [ -f "$LEGACY_TEMPLATE" ]; then
-  sed -i '/fav_overlay/d' "$LEGACY_TEMPLATE"
-  sed -i '/quick\.favorites/d' "$LEGACY_TEMPLATE"
-fi
-
-if [ -f "$DYNAMIX_TEMPLATE" ]; then
-  sed -i '/fav_overlay/d' "$DYNAMIX_TEMPLATE"
-  sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
-
-  # Wrapper so Unraid processes the PHP in the overlay page
-  cat > "$PLUGDIR/include.php" <<'EOF_INCLUDE'
-<?php include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
-EOF_INCLUDE
-
-  # Inject the wrapper and Javascript at the bottom of the Dynamix template
-  echo '<?php include "/usr/local/emhttp/plugins/quick.favorites/include.php"; ?>' >> "$DYNAMIX_TEMPLATE"
-  echo '<script src="/plugins/quick.favorites/favs.js"></script>' >> "$DYNAMIX_TEMPLATE"
-fi
+# CLEANUP LEGACY INJECTION (Crucial for users updating from the old version)
+sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
+rm -f "$PLUGDIR/include.php"
 
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
 
-echo ""
 echo "----------------------------------------------------"
-echo " Quick Favorites has been installed."
-echo " Version: 2026.03.27a"
+echo " Quick Favorites v&version; has been installed."
+echo " Native injection activated."
 echo "----------------------------------------------------"
-echo ""
 ]]>
 </INLINE>
 </FILE>
@@ -162,26 +99,11 @@ echo ""
 NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 DYNAMIX_TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
-LEGACY_TEMPLATE="/usr/local/emhttp/webGui/template.php"
 
-if [ -f "$LEGACY_TEMPLATE" ]; then
-  sed -i '/fav_overlay/d' "$LEGACY_TEMPLATE"
-  sed -i '/quick\.favorites/d' "$LEGACY_TEMPLATE"
-fi
-
-if [ -f "$DYNAMIX_TEMPLATE" ]; then
-  sed -i '/fav_overlay/d' "$DYNAMIX_TEMPLATE"
-  sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
-fi
-
+# Cleanup legacy injection just in case
+sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
 rm -rf "$PLUGDIR"
-
-echo ""
-echo "----------------------------------------------------------------------------"
-echo " Quick Favorites has been completely uninstalled."
-echo " Persistent files in /boot/config/plugins/quick.favorites were preserved."
-echo "----------------------------------------------------------------------------"
-echo ""
+echo "Quick Favorites has been removed."
 ]]>
 </INLINE>
 </FILE>
