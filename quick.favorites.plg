@@ -1,27 +1,35 @@
 <?xml version="1.0" standalone="yes"?>
 <!DOCTYPE PLUGIN [
-<!ENTITY name "quick.favorites">
-<!ENTITY author "hernandito">
-<!ENTITY version "2026.08.27q">
-<!ENTITY github "hernandito/quick.favorites">
+<!ENTITY name      "quick.favorites">
+<!ENTITY author    "hernandito">
+<!ENTITY version   "2026.08.25r">
+<!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
+<!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 ]>
 <PLUGIN name="&name;"
         author="&author;"
         version="&version;"
-        launch="/Settings/QuickFavorites"
+        launch="Settings/QuickFavorites"
         pluginURL="&pluginURL;"
         support="https://github.com/&github;"
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27q
-- Added automated global header hook in installer to load favs.js across all Unraid pages.
+###2026.08.25
+- FIXED: menu item did not appear. The header hook now uses Unraid's supported
+  Menu="Buttons" page mechanism instead of editing a core file that does not exist.
+- The button no longer depends on Unraid's native "Favorites" tab being present.
+- The button is relocated to the end of the navigation tab strip.
+- No Unraid core file is modified, so the hook survives reboots and OS upgrades.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
+</FILE>
+
+<FILE Name="&plugdir;/QuickFavoritesButton.page">
+  <URL>https://raw.githubusercontent.com/&github;/main/QuickFavoritesButton.page</URL>
 </FILE>
 
 <FILE Name="&plugdir;/popup.php">
@@ -52,30 +60,74 @@ NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 CONF="/boot/config/plugins/$NAME"
 
-if [ ! -d "$CONF" ]; then mkdir -p "$CONF"; fi
-if [ ! -f "$CONF/appearance.json" ]; then 
-  echo '{"menu_title":"Quick Favorites","header_label":"⭐⭐","icon_size":"42","grid_columns":"5","menu_width":"480","show_header":"no","hover_color":"#333333","bg_color":"#000000","header_color":"#FFCA28","header_line":"#333333","section_title_color":"#FFCA28","section_border_color":"#554000","icon_color":"#FFCA28","label_color":"#CCCCCC"}' > "$CONF/appearance.json"
+mkdir -p "$CONF"
+
+# --- Persistent user config: create ONLY if missing, never overwrite ---------
+if [ ! -f "$CONF/appearance.json" ]; then
+cat > "$CONF/appearance.json" <<'EOF_APPEARANCE'
+{
+    "menu_title": "Quick Favorites",
+    "header_label": "\u2b50\u2b50",
+    "icon_size": "42",
+    "grid_columns": "5",
+    "menu_width": "480",
+    "show_header": "no",
+    "hover_color": "#333333",
+    "bg_color": "#000000",
+    "header_color": "#FFCA28",
+    "header_line": "#333333",
+    "section_title_color": "#FFCA28",
+    "section_border_color": "#554000",
+    "icon_color": "#FFCA28",
+    "label_color": "#CCCCCC"
+}
+EOF_APPEARANCE
 fi
-if [ ! -f "$CONF/favorites.json" ]; then 
-  echo '[{"path":"\/Settings\/QuickFavorites","category":"General","label":"Quick Fav Settings","icon":"fa-star","action":"_self"}]' > "$CONF/favorites.json"
+
+if [ ! -f "$CONF/favorites.json" ]; then
+cat > "$CONF/favorites.json" <<'EOF_FAVORITES'
+[
+    {
+        "path": "/Settings/QuickFavorites",
+        "category": "General",
+        "label": "Quick Fav Settings",
+        "icon": "fa-star",
+        "action": "_self"
+    }
+]
+EOF_FAVORITES
 fi
-touch "$CONF/custom.css"
-touch "$CONF/user_notes.txt"
+
+[ -f "$CONF/custom.css" ]     || touch "$CONF/custom.css"
+[ -f "$CONF/user_notes.txt" ] || touch "$CONF/user_notes.txt"
+
+# --- Undo injections written into Unraid core files by older versions --------
+# Those files live on tmpfs and reset at boot, but clean them so the fix takes
+# effect immediately without a reboot and without leaving duplicate script tags.
+for CORE in \
+  "/usr/local/emhttp/plugins/dynamix/template.php" \
+  "/usr/local/emhttp/webGui/template.php" \
+  "/usr/local/emhttp/plugins/dynamix/include/Header.php" \
+  "/usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/Header.php" \
+  "/usr/local/emhttp/webGui/include/DefaultPageLayout/Header.php" ; do
+  if [ -f "$CORE" ]; then
+    sed -i '/quick\.favorites/d' "$CORE"
+    sed -i '/fav_overlay/d'      "$CORE"
+  fi
+done
+
+# Leftovers from the old include-wrapper approach
+rm -f "$PLUGDIR/include.php" "$PLUGDIR/quick.favorites.page" "$PLUGDIR/QuickFavorites.inject.page"
 
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
 
-# Safely inject the global script tag into Unraid's header file
-HEADER_FILE="/usr/local/emhttp/plugins/dynamix/include/Header.php"
-SCRIPT_TAG="<script src=\"/plugins/$NAME/favs.js\"></script>"
-
-if [ -f "$HEADER_FILE" ]; then
-    sed -i "s|</html>|$SCRIPT_TAG\n</html>|g" "$HEADER_FILE"
-fi
-
+echo ""
 echo "----------------------------------------------------"
-echo " Quick Favorites v&version; installed successfully."
+echo " Quick Favorites &version; installed."
+echo " Refresh the browser (Ctrl-F5) to see the menu item."
 echo "----------------------------------------------------"
+echo ""
 ]]>
 </INLINE>
 </FILE>
@@ -85,15 +137,27 @@ echo "----------------------------------------------------"
 <INLINE>
 <![CDATA[
 NAME="quick.favorites"
-HEADER_FILE="/usr/local/emhttp/plugins/dynamix/include/Header.php"
-SCRIPT_TAG="<script src=\"/plugins/$NAME/favs.js\"></script>"
 
-if [ -f "$HEADER_FILE" ]; then
-    sed -i "s|$SCRIPT_TAG||g" "$HEADER_FILE"
-fi
+for CORE in \
+  "/usr/local/emhttp/plugins/dynamix/template.php" \
+  "/usr/local/emhttp/webGui/template.php" \
+  "/usr/local/emhttp/plugins/dynamix/include/Header.php" \
+  "/usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/Header.php" \
+  "/usr/local/emhttp/webGui/include/DefaultPageLayout/Header.php" ; do
+  if [ -f "$CORE" ]; then
+    sed -i '/quick\.favorites/d' "$CORE"
+    sed -i '/fav_overlay/d'      "$CORE"
+  fi
+done
 
 rm -rf "/usr/local/emhttp/plugins/$NAME"
-echo "Quick Favorites files and global hook removed."
+
+echo ""
+echo "-----------------------------------------------------------------------"
+echo " Quick Favorites uninstalled."
+echo " Settings in /boot/config/plugins/quick.favorites were preserved."
+echo "-----------------------------------------------------------------------"
+echo ""
 ]]>
 </INLINE>
 </FILE>
