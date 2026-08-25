@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.25r">
+<!ENTITY version   "2026.08.25s">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -17,6 +17,7 @@
 
 <CHANGES>
 ###2026.08.25
+- FIXED: Settings page missing customization options. 
 - FIXED: menu item did not appear. The header hook now uses Unraid's supported
   Menu="Buttons" page mechanism instead of editing a core file that does not exist.
 - The button no longer depends on Unraid's native "Favorites" tab being present.
@@ -57,6 +58,9 @@
 <INLINE>
 <![CDATA[
 NAME="quick.favorites"
+# Entity refs are NOT expanded inside CDATA, so close it, let the parser expand
+# &version;, then reopen. Without this the shell receives the literal "&version;".
+VERSION="]]>&version;<![CDATA["
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 CONF="/boot/config/plugins/$NAME"
 
@@ -124,7 +128,7 @@ chmod -R 755 "$PLUGDIR"
 
 echo ""
 echo "----------------------------------------------------"
-echo " Quick Favorites &version; installed."
+echo " Quick Favorites $VERSION installed."
 echo " Refresh the browser (Ctrl-F5) to see the menu item."
 echo "----------------------------------------------------"
 echo ""
@@ -137,6 +141,7 @@ echo ""
 <INLINE>
 <![CDATA[
 NAME="quick.favorites"
+VERSION="]]>&version;<![CDATA["
 
 for CORE in \
   "/usr/local/emhttp/plugins/dynamix/template.php" \
@@ -154,7 +159,7 @@ rm -rf "/usr/local/emhttp/plugins/$NAME"
 
 echo ""
 echo "-----------------------------------------------------------------------"
-echo " Quick Favorites uninstalled."
+echo " Quick Favorites $VERSION uninstalled."
 echo " Settings in /boot/config/plugins/quick.favorites were preserved."
 echo "-----------------------------------------------------------------------"
 echo ""
