@@ -1,53 +1,5 @@
-document.addEventListener('DOMContentLoaded', function() {
-    var mode = (typeof qf_settings !== 'undefined' && qf_settings.mode) ? qf_settings.mode : 'hijack';
-    var labelText = (typeof qf_settings !== 'undefined' && qf_settings.label) ? qf_settings.label : '⭐⭐';
-
-    function setupHeaderButton() {
-        var targetLink = null;
-
-        if (mode === 'hijack') {
-            targetLink = document.querySelector('a[href="/Favorites"]');
-            if (targetLink) {
-                targetLink.innerHTML = labelText;
-                targetLink.setAttribute('title', 'Quick Favorites');
-            }
-        } else {
-            targetLink = document.getElementById('qf-native-custom-link');
-            if (!targetLink) {
-                var navbar = document.querySelector('#navBar') || document.querySelector('.user.dropdown') || document.querySelector('ul.nav') || document.querySelector('.top-menu');
-                
-                if (navbar) {
-                    targetLink = document.createElement('a');
-                    targetLink.id = 'qf-native-custom-link';
-                    targetLink.href = '#';
-                    targetLink.innerHTML = labelText;
-                    targetLink.style.cssText = 'padding: 0 10px; cursor: pointer; display: inline-flex; align-items: center;';
-                    
-                    if (navbar.tagName === 'UL') {
-                        var li = document.createElement('li');
-                        li.appendChild(targetLink);
-                        navbar.appendChild(li);
-                    } else {
-                        navbar.appendChild(targetLink);
-                    }
-                }
-            }
-        }
-    }
-
-    setupHeaderButton();
-    var observer = new MutationObserver(function() {
-        setupHeaderButton();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-});
-
 document.addEventListener('click', function(e) {
-    var mode = (typeof qf_settings !== 'undefined' && qf_settings.mode) ? qf_settings.mode : 'hijack';
-    var clickedLink = mode === 'hijack' 
-        ? e.target.closest('a[href="/Favorites"]') 
-        : e.target.closest('#qf-native-custom-link');
-        
+    var clickedLink = e.target.closest('#qf-native-custom-link');
     var customMenu = document.getElementById('my-custom-fav-menu');
 
     if (clickedLink) {

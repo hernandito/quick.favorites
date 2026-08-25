@@ -295,13 +295,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                         <label>Header Title:</label>
                         <input type="text" name="menu_title" value="<?= htmlspecialchars($style['menu_title']) ?>" class="qf-input" style="font-size: 13px; font-weight: bold;">
                     </div>
-                    <div>
-                        <label>Header Mode:</label>
-                        <select name="header_mode" class="qf-input" style="font-size: 12px; font-weight: bold;">
-                            <option value="hijack" <?= (($style['header_mode'] ?? 'hijack') === 'hijack') ? 'selected' : '' ?>>Re-use & Rename Stock Favorites</option>
-                            <option value="separate" <?= (($style['header_mode'] ?? 'hijack') === 'separate') ? 'selected' : '' ?>>Create Separate New Item at End</option>
-                        </select>
-                    </div>
+
                     <div>
                         <label>Header Label / Text:</label>
                         <input type="text" name="header_label" value="<?= htmlspecialchars($style['header_label'] ?? '⭐⭐') ?>" class="qf-input" style="font-size: 13px; font-weight: bold;">

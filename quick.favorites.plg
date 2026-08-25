@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.08.27g">
+<!ENTITY version "2026.08.27h">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,8 +16,8 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27f
-- Updated injection schema and header mode mapping.
+###2026.08.27g
+- Reverted to safe, native Unraid Button menu injection.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -44,26 +44,22 @@
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<!-- NATIVE FOOTER INJECTION -->
+<!-- NATIVE BUTTON INJECTION -->
 <FILE Name="&plugdir;/QuickFavorites.inject.page">
 <INLINE>
 <![CDATA[
-Menu="Footer"
-Markdown="false"
+Menu="Buttons"
+Link="nav-user"
 ---
-<?
+<?php
 $qf_conf = "/boot/config/plugins/quick.favorites/appearance.json";
 $qf_settings = file_exists($qf_conf) ? json_decode(file_get_contents($qf_conf), true) : [];
-$qf_mode = $qf_settings['header_mode'] ?? 'hijack';
-$qf_label = $qf_settings['header_label'] ?? '⭐⭐';
+$qf_label = isset($qf_settings['header_label']) ? $qf_settings['header_label'] : '⭐⭐';
 ?>
-<script>
-var qf_settings = {
-    mode: "<?= htmlspecialchars($qf_mode) ?>",
-    label: "<?= htmlspecialchars($qf_label) ?>"
-};
-</script>
-<? include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
+<a href="#" id="qf-native-custom-link" title="Quick Favorites" style="padding: 0 10px; display: inline-flex; align-items: center; cursor: pointer; color: inherit; text-decoration: none;">
+    <?= htmlspecialchars($qf_label) ?>
+</a>
+<?php include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
 <script src="/plugins/quick.favorites/favs.js"></script>
 ]]>
 </INLINE>
@@ -75,13 +71,12 @@ var qf_settings = {
 NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 CONF="/boot/config/plugins/$NAME"
-DYNAMIX_TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
 
 if [ ! -d "$CONF" ]; then
   mkdir -p "$CONF"
 fi
 if [ ! -f "$CONF/appearance.json" ]; then
-  echo '{"menu_title":"Quick Favorites","icon_size":"32","bg_color":"#1c1c1c","header_color":"#ffca28","header_line":"#333333","section_title_color":"#888888","text_color":"#e0e0e0","grid_columns":"4","menu_width":"480","show_header":"yes","hover_color":"#333333","header_mode":"hijack","header_label":"⭐⭐"}' > "$CONF/appearance.json"
+  echo '{"menu_title":"Quick Favorites","icon_size":"32","bg_color":"#1c1c1c","header_color":"#ffca28","header_line":"#333333","section_title_color":"#888888","text_color":"#e0e0e0","grid_columns":"4","menu_width":"480","show_header":"yes","hover_color":"#333333","header_label":"⭐⭐"}' > "$CONF/appearance.json"
 fi
 if [ ! -f "$CONF/favorites.json" ]; then
   echo '[{"path":"\/Settings\/QuickFavorites","category":"General","label":"Quick Fav Settings","icon":"fa-star","action":"_self"}]' > "$CONF/favorites.json"
@@ -89,13 +84,11 @@ fi
 touch "$CONF/custom.css"
 touch "$CONF/user_notes.txt"
 
-sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
-
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
 
 echo "----------------------------------------------------"
-echo " Quick Favorites v&version; has been installed."
+echo " Quick Favorites v&version; has been cleanly installed."
 echo "----------------------------------------------------"
 ]]>
 </INLINE>
@@ -106,9 +99,6 @@ echo "----------------------------------------------------"
 <![CDATA[
 NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
-DYNAMIX_TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
-
-sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
 rm -rf "$PLUGDIR"
 echo "Quick Favorites has been removed."
 ]]>
