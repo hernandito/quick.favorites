@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_favs'])) {
     file_put_contents($notes_file, $user_notes);
 	
 	// Save Appearance Settings
-    $appearance_data = [
+	$appearance_data = [
         'menu_title' => $_POST['menu_title'] ?? 'Quick Favorites',
         'header_mode' => $_POST['header_mode'] ?? 'hijack',
         'header_label' => $_POST['header_label'] ?? '⭐⭐',
