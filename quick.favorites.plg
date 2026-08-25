@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.08.27l">
+<!ENTITY version "2026.08.27o">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,9 +16,9 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27l
-- Fixed DOM nesting issue: Uses precise sibling targeting to create an independent nav-item container.
-- Clean placement right after the Scripts tab with matched menu bar height.
+###2026.08.27o
+- Completely removed core file modifications (zero template.php patching).
+- Uses clean client-side element transformation and placement to position the Quick Favorites menu natively at the end of the menu bar.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -45,18 +45,14 @@
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<!-- INSTALL & AUTOMATED TEMPLATE PATCHING SCRIPT -->
+<!-- INSTALL SCRIPT -->
 <FILE Run="/bin/bash">
 <INLINE>
 <![CDATA[
 NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 CONF="/boot/config/plugins/$NAME"
-TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
-MARK_START="<!-- QUICK_FAVORITES_INJECT_START -->"
-MARK_END="<!-- QUICK_FAVORITES_INJECT_END -->"
 
-# 1. Ensure flash configuration directory and default settings exist safely
 if [ ! -d "$CONF" ]; then mkdir -p "$CONF"; fi
 if [ ! -f "$CONF/appearance.json" ]; then 
   echo '{"menu_title":"Quick Favorites","header_label":"⭐⭐","icon_size":"42","grid_columns":"5","menu_width":"480","show_header":"no","hover_color":"#333333","bg_color":"#000000","header_color":"#FFCA28","header_line":"#333333","section_title_color":"#FFCA28","section_border_color":"#554000","icon_color":"#FFCA28","label_color":"#CCCCCC"}' > "$CONF/appearance.json"
@@ -70,197 +66,20 @@ touch "$CONF/user_notes.txt"
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
 
-# 2. Clean any prior injection blocks from template.php
-sed -i "/$MARK_START/,/$MARK_END/d" "$TEMPLATE"
-
-# 3. Create the clean injection payload with exact sibling-insertion logic
-TMPFILE="$(mktemp)"
-cat > "$TMPFILE" << 'EOF2'
-<!-- QUICK_FAVORITES_INJECT_START -->
-<?php
-$qf_conf = "/boot/config/plugins/quick.favorites/appearance.json";
-$qf_settings = file_exists($qf_conf) ? json_decode(file_get_contents($qf_conf), true) : [];
-$qf_label = isset($qf_settings['header_label']) ? $qf_settings['header_label'] : '⭐⭐';
-?>
-<script>
-var qf_label_text = "<?= htmlspecialchars($qf_label) ?>";
-</script>
-<?php
-if (file_exists("/usr/local/emhttp/plugins/quick.favorites/popup.php")) {
-    include("/usr/local/emhttp/plugins/quick.favorites/popup.php");
-}
-?>
-<script>
-(function () {
-    function createNewMenu() {
-        if (document.getElementById('qf-custom-btn')) return;
-        
-        var menuBar = document.querySelector('div#menu');
-        if (!menuBar) return;
-
-        // 1. Create a completely independent container matching Unraid's nav-item structure
-        var navItemDiv = document.createElement('div');
-        navItemDiv.className = 'nav-item';
-
-        var btn = document.createElement('a');
-        btn.id = 'qf-custom-btn';
-        btn.href = '#';
-        btn.innerHTML = qf_label_text;
-        btn.title = 'Quick Favorites';
-        btn.style.cssText = 'height: 100%; display: inline-flex; align-items: center; padding: 0 14px; cursor: pointer; text-decoration: none; color: inherit; font-size: 13px; font-weight: bold;';
-
-        navItemDiv.appendChild(btn);
-
-        // 2. Find the Scripts tab explicitly and get its parent wrapper container
-        var allLinks = menuBar.querySelectorAll('a');
-        var targetNode = null;
-
-        for (var i = 0; i < allLinks.length; i++) {
-            if (allLinks[i].textContent.trim() === 'Scripts') {
-                targetNode = allLinks[i].parentElement;
-                break;
-            }
-        }
-
-        // 3. Insert our independent container as a clean sibling right after the Scripts container
-        if (targetNode && targetNode.parentElement === menuBar) {
-            targetNode.after(navItemDiv);
-        } else {
-            menuBar.appendChild(navItemDiv);
-        }
-    }
-
-    var runs = 0;
-    var timer = setInterval(function () {
-        createNewMenu();
-        runs++;
-        if (runs >= 30) clearInterval(timer);
-    }, 400);
-
-    var obs = new MutationObserver(function () {
-        createNewMenu();
-    });
-
-    if (document.body) {
-        obs.observe(document.body, { childList: true, subtree: true });
-        createNewMenu();
-    }
-})();
-
-// Fully functional click handler for the popup menu
-document.addEventListener('click', function(e) {
-    var clickedLink = e.target.closest('#qf-custom-btn');
-    var customMenu = document.getElementById('my-custom-fav-menu');
-
-    if (clickedLink) {
-        e.preventDefault(); 
-        e.stopPropagation();
-        
-        if (!customMenu) return;
-
-        if (customMenu.style.display === 'block') {
-            customMenu.style.display = 'none';
-        } else {
-            customMenu.style.display = 'block';
-            var rect = clickedLink.getBoundingClientRect();
-            var menuWidth = customMenu.offsetWidth || 480;
-            var btnCenter = rect.left + window.scrollX + (rect.width / 2);
-            var calculatedLeft = Math.max(15, Math.min(btnCenter - (menuWidth / 2), window.innerWidth - menuWidth - 15));
-            customMenu.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-            customMenu.style.left = calculatedLeft + 'px';
-        }
-    } 
-    else if (customMenu && customMenu.style.display === 'block') {
-        if (!e.target.closest('#my-custom-fav-menu')) {
-            customMenu.style.display = 'none';
-        } else {
-            var itemTarget = e.target.closest('.qf-item');
-            if (itemTarget) {
-                var action = itemTarget.getAttribute('data-action');
-                var path = itemTarget.getAttribute('data-path').trim();
-                var token = (typeof csrf_token !== 'undefined') ? csrf_token : '';
-                
-                if (action === 'script_modal' || action === 'script_background') {
-                    e.preventDefault(); e.stopPropagation();
-                    var fullScriptPath = "/boot/config/plugins/user.scripts/scripts/" + path + "/script";
-                    
-                    $.post('/plugins/user.scripts/exec.php', {
-                        script: fullScriptPath,
-                        action: 'intermediate',
-                        csrf_token: token
-                    }, function() {
-                        var tmpScriptPath = "/tmp/user.scripts/tmpScripts/" + path + "/script";
-                        var targetUrl = (action === 'script_modal') 
-                            ? "/plugins/user.scripts/startScript.sh&arg1=" + tmpScriptPath 
-                            : "/plugins/user.scripts/backgroundScript.sh&arg1=" + tmpScriptPath;
-                        
-                        openBox(targetUrl, 'Executing: ' + path, 600, 900, true);
-                        customMenu.style.display = 'none'; 
-                    });
-                } 
-                else if (action === 'script_log') {
-                    e.preventDefault(); e.stopPropagation();
-                    if (!path) return;
-                    
-                    var scriptName = path.replace(/^\/+/, '');
-                    var logWin = window.open('/logging.htm?done=Close', 'qf_log_window', 'width=800,height=600,resizable=yes,scrollbars=yes');
-                    var fetchUrl = '/plugins/quick.favorites/log_api.php?script=' + encodeURIComponent(scriptName);
-                    
-                    fetch(fetchUrl)
-                        .then(function(res) { return res.text(); })
-                        .then(function(logData) {
-                            var checkReady = setInterval(function() {
-                                if (logWin && logWin.document && logWin.document.readyState === 'complete') {
-                                    clearInterval(checkReady);
-                                    var contentDiv = logWin.document.createElement('div');
-                                    contentDiv.style.whiteSpace = 'pre-wrap';
-                                    contentDiv.style.fontFamily = 'monospace';
-                                    contentDiv.style.padding = '10px';
-                                    contentDiv.innerHTML = logData; 
-                                    logWin.document.body.insertBefore(contentDiv, logWin.document.body.firstChild);
-                                    logWin.scrollTo(0, logWin.document.body.scrollHeight);
-                                }
-                            }, 50);
-                        });
-                    customMenu.style.display = 'none';
-                }
-            }
-        }
-    }
-}, true);
-</script>
-<!-- QUICK_FAVORITES_INJECT_END -->
-EOF2
-
-# 4. Safely inject into template.php right before </body>
-if grep -q '</body>' "$TEMPLATE"; then
-  sed -i "/<\/body>/e cat '$TMPFILE'" "$TEMPLATE"
-else
-  cat "$TMPFILE" >> "$TEMPLATE"
-fi
-rm -f "$TMPFILE"
-
 echo "----------------------------------------------------"
-echo " Quick Favorites v&version; installed & injected successfully."
+echo " Quick Favorites v&version; installed successfully."
 echo "----------------------------------------------------"
 ]]>
 </INLINE>
 </FILE>
 
-<!-- AUTOMATED CLEANUP ON PLUGIN REMOVAL -->
+<!-- REMOVE SCRIPT -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
 <![CDATA[
 NAME="quick.favorites"
-TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
-MARK_START="<!-- QUICK_FAVORITES_INJECT_START -->"
-MARK_END="<!-- QUICK_FAVORITES_INJECT_END -->"
-
-# Remove the injection block from template.php
-sed -i "/$MARK_START/,/$MARK_END/d" "$TEMPLATE"
 rm -rf "/usr/local/emhttp/plugins/$NAME"
-
-echo "Quick Favorites runtime files and template patch removed."
+echo "Quick Favorites files removed."
 ]]>
 </INLINE>
 </FILE>
