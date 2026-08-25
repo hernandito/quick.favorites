@@ -17,8 +17,8 @@
 
 <CHANGES>
 ###2026.08.27l
-- Fixed DOM structure: Quick Favorites now wraps in its own dedicated nav-item container.
-- Clean green-arrow placement after the Scripts tab with matched native menu bar height.
+- Fixed DOM nesting issue: Uses precise sibling targeting to create an independent nav-item container.
+- Clean placement right after the Scripts tab with matched menu bar height.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -73,7 +73,7 @@ chmod -R 755 "$PLUGDIR"
 # 2. Clean any prior injection blocks from template.php
 sed -i "/$MARK_START/,/$MARK_END/d" "$TEMPLATE"
 
-# 3. Create the clean injection payload with dedicated nav-item wrapper
+# 3. Create the clean injection payload with exact sibling-insertion logic
 TMPFILE="$(mktemp)"
 cat > "$TMPFILE" << 'EOF2'
 <!-- QUICK_FAVORITES_INJECT_START -->
@@ -98,7 +98,7 @@ if (file_exists("/usr/local/emhttp/plugins/quick.favorites/popup.php")) {
         var menuBar = document.querySelector('div#menu');
         if (!menuBar) return;
 
-        // Create a dedicated nav-item container matching Unraid's layout architecture
+        // 1. Create a completely independent container matching Unraid's nav-item structure
         var navItemDiv = document.createElement('div');
         navItemDiv.className = 'nav-item';
 
@@ -111,12 +111,20 @@ if (file_exists("/usr/local/emhttp/plugins/quick.favorites/popup.php")) {
 
         navItemDiv.appendChild(btn);
 
-        // Position precisely as its own container right after the Scripts tab
-        var scriptTabLink = menuBar.querySelector('a[href*="Script"]');
-        var scriptNavItem = scriptTabLink ? scriptTabLink.closest('.nav-item') : null;
+        // 2. Find the Scripts tab explicitly and get its parent wrapper container
+        var allLinks = menuBar.querySelectorAll('a');
+        var targetNode = null;
 
-        if (scriptNavItem) {
-            scriptNavItem.after(navItemDiv);
+        for (var i = 0; i < allLinks.length; i++) {
+            if (allLinks[i].textContent.trim() === 'Scripts') {
+                targetNode = allLinks[i].parentElement;
+                break;
+            }
+        }
+
+        // 3. Insert our independent container as a clean sibling right after the Scripts container
+        if (targetNode && targetNode.parentElement === menuBar) {
+            targetNode.after(navItemDiv);
         } else {
             menuBar.appendChild(navItemDiv);
         }
