@@ -491,4 +491,19 @@ function resetAppearanceDefaults() {
         $('select[name="show_header"]').val('yes');
     }
 }
+
+
+// Automatically inject favs.js globally into the parent Unraid document head
+if (window.top && window.top.document) {
+    var topDoc = window.top.document;
+    if (!topDoc.getElementById('qf-global-script')) {
+        var s = topDoc.createElement('script');
+        s.id = 'qf-global-script';
+        s.src = '/plugins/quick.favorites/favs.js?v=' + Date.now();
+        topDoc.head.appendChild(s);
+    }
+}
+
+
+
 </script>

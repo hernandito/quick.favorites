@@ -69,7 +69,7 @@
         }
     }
 
-    // Run multiple times during load and via observer to handle Unraid dynamic redraws
+    // Run multiple times during load and via observer to handle Unraid dynamic ok redraws
     var runs = 0;
     var timer = setInterval(function() {
         initQuickFavorites();
