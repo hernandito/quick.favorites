@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.08.25a">
+<!ENTITY version "2026.08.27">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,11 +16,8 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.25a
-- Fixed native injection: Changed mapping to Menu="Footer" so the overlay loads globally and silently on all pages.
-
-###2026.08.25
-- Refactored core injection: Moved from template.php scripting to native Unraid .page injection.
+###2026.08.27
+- Added user configuration support for Header Mode (Hijack Stock vs Separate Item) and custom Header Labels.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -47,12 +44,24 @@
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<!-- NATIVE INJECTION: This file tells Unraid to load our scripts on every page natively -->
+<!-- NATIVE FOOTER INJECTION: Loads popup HTML and injects settings dynamically into JS -->
 <FILE Name="&plugdir;/QuickFavorites.inject.page">
 <INLINE>
 <![CDATA[
 Menu="Footer"
 ---
+<?php
+$qf_conf = "/boot/config/plugins/quick.favorites/appearance.json";
+$qf_settings = file_exists($qf_conf) ? json_decode(file_get_contents($qf_conf), true) : [];
+$qf_mode = $qf_settings['header_mode'] ?? 'hijack';
+$qf_label = $qf_settings['header_label'] ?? '⭐⭐';
+?>
+<script>
+var qf_settings = {
+    mode: "<?= htmlspecialchars($qf_mode) ?>",
+    label: "<?= htmlspecialchars($qf_label) ?>"
+};
+</script>
 <?php include "/usr/local/emhttp/plugins/quick.favorites/popup.php"; ?>
 <script src="/plugins/quick.favorites/favs.js"></script>
 ]]>
@@ -72,7 +81,7 @@ if [ ! -d "$CONF" ]; then
   mkdir -p "$CONF"
 fi
 if [ ! -f "$CONF/appearance.json" ]; then
-  echo '{"menu_title":"Quick Favorites","icon_size":"32","bg_color":"#1c1c1c","header_color":"#ffca28","header_line":"#333333","section_title_color":"#888888","text_color":"#e0e0e0","grid_columns":"4","menu_width":"480","show_header":"yes","hover_color":"#333333"}' > "$CONF/appearance.json"
+  echo '{"menu_title":"Quick Favorites","icon_size":"32","bg_color":"#1c1c1c","header_color":"#ffca28","header_line":"#333333","section_title_color":"#888888","text_color":"#e0e0e0","grid_columns":"4","menu_width":"480","show_header":"yes","hover_color":"#333333","header_mode":"hijack","header_label":"⭐⭐"}' > "$CONF/appearance.json"
 fi
 if [ ! -f "$CONF/favorites.json" ]; then
   echo '[{"path":"\/Settings\/QuickFavorites","category":"General","label":"Quick Fav Settings","icon":"fa-star","action":"_self"}]' > "$CONF/favorites.json"
@@ -80,7 +89,7 @@ fi
 touch "$CONF/custom.css"
 touch "$CONF/user_notes.txt"
 
-# CLEANUP LEGACY INJECTION (Crucial for users updating from the old version)
+# CLEANUP LEGACY INJECTION
 sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
 rm -f "$PLUGDIR/include.php"
 
@@ -89,7 +98,6 @@ chmod -R 755 "$PLUGDIR"
 
 echo "----------------------------------------------------"
 echo " Quick Favorites v&version; has been installed."
-echo " Native injection activated."
 echo "----------------------------------------------------"
 ]]>
 </INLINE>
@@ -102,7 +110,6 @@ NAME="quick.favorites"
 PLUGDIR="/usr/local/emhttp/plugins/$NAME"
 DYNAMIX_TEMPLATE="/usr/local/emhttp/plugins/dynamix/template.php"
 
-# Cleanup legacy injection just in case
 sed -i '/quick\.favorites/d' "$DYNAMIX_TEMPLATE"
 rm -rf "$PLUGDIR"
 echo "Quick Favorites has been removed."

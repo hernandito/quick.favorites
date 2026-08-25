@@ -1,5 +1,53 @@
+document.addEventListener('DOMContentLoaded', function() {
+    var mode = (typeof qf_settings !== 'undefined' && qf_settings.mode) ? qf_settings.mode : 'hijack';
+    var labelText = (typeof qf_settings !== 'undefined' && qf_settings.label) ? qf_settings.label : '⭐⭐';
+
+    function setupHeaderButton() {
+        var targetLink = null;
+
+        if (mode === 'hijack') {
+            targetLink = document.querySelector('a[href="/Favorites"]');
+            if (targetLink) {
+                targetLink.innerHTML = labelText;
+                targetLink.setAttribute('title', 'Quick Favorites');
+            }
+        } else {
+            targetLink = document.getElementById('qf-native-custom-link');
+            if (!targetLink) {
+                var navbar = document.querySelector('#navBar') || document.querySelector('.user.dropdown') || document.querySelector('ul.nav') || document.querySelector('.top-menu');
+                
+                if (navbar) {
+                    targetLink = document.createElement('a');
+                    targetLink.id = 'qf-native-custom-link';
+                    targetLink.href = '#';
+                    targetLink.innerHTML = labelText;
+                    targetLink.style.cssText = 'padding: 0 10px; cursor: pointer; display: inline-flex; align-items: center;';
+                    
+                    if (navbar.tagName === 'UL') {
+                        var li = document.createElement('li');
+                        li.appendChild(targetLink);
+                        navbar.appendChild(li);
+                    } else {
+                        navbar.appendChild(targetLink);
+                    }
+                }
+            }
+        }
+    }
+
+    setupHeaderButton();
+    var observer = new MutationObserver(function() {
+        setupHeaderButton();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
 document.addEventListener('click', function(e) {
-    var clickedLink = e.target.closest('a[href="/Favorites"]');
+    var mode = (typeof qf_settings !== 'undefined' && qf_settings.mode) ? qf_settings.mode : 'hijack';
+    var clickedLink = mode === 'hijack' 
+        ? e.target.closest('a[href="/Favorites"]') 
+        : e.target.closest('#qf-native-custom-link');
+        
     var customMenu = document.getElementById('my-custom-fav-menu');
 
     if (clickedLink) {
@@ -30,7 +78,6 @@ document.addEventListener('click', function(e) {
                 
                 if (action === 'script_modal' || action === 'script_background') {
                     e.preventDefault(); e.stopPropagation();
-                    
                     var fullScriptPath = "/boot/config/plugins/user.scripts/scripts/" + path + "/script";
                     
                     $.post('/plugins/user.scripts/exec.php', {
@@ -39,66 +86,38 @@ document.addEventListener('click', function(e) {
                         csrf_token: token
                     }, function() {
                         var tmpScriptPath = "/tmp/user.scripts/tmpScripts/" + path + "/script";
-                        var targetUrl = "";
+                        var targetUrl = (action === 'script_modal') 
+                            ? "/plugins/user.scripts/startScript.sh&arg1=" + tmpScriptPath 
+                            : "/plugins/user.scripts/backgroundScript.sh&arg1=" + tmpScriptPath;
                         
-                        if (action === 'script_modal') {
-                            targetUrl = "/plugins/user.scripts/startScript.sh&arg1=" + tmpScriptPath;
-                            openBox(targetUrl, 'Executing: ' + path, 600, 900, true);
-                        } else {
-                            targetUrl = "/plugins/user.scripts/backgroundScript.sh&arg1=" + tmpScriptPath;
-                            openBox(targetUrl, 'Executing (Background): ' + path, 600, 900, true);
-                        }
+                        openBox(targetUrl, 'Executing: ' + path, 600, 900, true);
                         customMenu.style.display = 'none'; 
                     });
                 } 
                 else if (action === 'script_log') {
                     e.preventDefault(); e.stopPropagation();
+                    if (!path) return;
                     
-                    if (!path || path === '') {
-                        alert("Javascript Error: The script name (data-path) is blank in the HTML!");
-                        return;
-                    }
-
-                    // Clean up the name (removes leading slashes just in case)
                     var scriptName = path.replace(/^\/+/, '');
-                    
-                    // 1. Open Unraid's native blank log window
-                    var logWin = window.open('/logging.htm?done=Close', 'qf_log_window', 'width=800,height=600,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no');
-                    
-                    // 2. Fetch the log text from our API using GET so it matches the PHP file
+                    var logWin = window.open('/logging.htm?done=Close', 'qf_log_window', 'width=800,height=600,resizable=yes,scrollbars=yes');
                     var fetchUrl = '/plugins/quick.favorites/log_api.php?script=' + encodeURIComponent(scriptName);
                     
                     fetch(fetchUrl)
-                        .then(function(response) { return response.text(); })
+                        .then(function(res) { return res.text(); })
                         .then(function(logData) {
-                            
-                            // 3. Wait for the page's "readyState" to be complete so we know Unraid added its button
                             var checkReady = setInterval(function() {
                                 if (logWin && logWin.document && logWin.document.readyState === 'complete') {
                                     clearInterval(checkReady);
-                                    
-                                    // 4. Create our pre-formatted HTML log container
                                     var contentDiv = logWin.document.createElement('div');
                                     contentDiv.style.whiteSpace = 'pre-wrap';
                                     contentDiv.style.fontFamily = 'monospace';
                                     contentDiv.style.padding = '10px';
-                                    contentDiv.style.marginBottom = '20px';
                                     contentDiv.innerHTML = logData; 
-                                    
-                                    // 5. Slip our log directly ABOVE Unraid's native Close button
                                     logWin.document.body.insertBefore(contentDiv, logWin.document.body.firstChild);
-                                    
-                                    // Scroll to bottom
                                     logWin.scrollTo(0, logWin.document.body.scrollHeight);
                                 }
                             }, 50);
-                        })
-                        .catch(function(err) {
-                            if (logWin && logWin.document) {
-                                logWin.document.body.innerHTML = "<div style='padding:20px; color:red;'>Fetch Error: " + err + "</div>";
-                            }
                         });
-                        
                     customMenu.style.display = 'none';
                 }
             }
