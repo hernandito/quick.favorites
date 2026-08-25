@@ -1,5 +1,60 @@
+(function () {
+    var labelText = (typeof qf_settings !== 'undefined' && qf_settings.label) ? qf_settings.label : '⭐⭐';
+
+    function createNewMenu() {
+        if (document.getElementById('qf-custom-btn')) return; // Already exists
+        
+        // Find Unraid's top nav container
+        var nav = document.querySelector('.nav-user') || document.querySelector('#navBar') || document.querySelector('ul.nav');
+        if (!nav) return;
+
+        var btn = document.createElement('a');
+        btn.id = 'qf-custom-btn';
+        btn.href = '#';
+        btn.innerHTML = labelText;
+        btn.title = 'Quick Favorites';
+        btn.style.cssText = 'padding: 0 10px; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; color: inherit; font-weight: bold;';
+
+        if (nav.tagName === 'UL') {
+            var li = document.createElement('li');
+            li.appendChild(btn);
+            nav.appendChild(li); // Appends to the very end
+        } else {
+            nav.appendChild(btn); // Appends to the very end
+        }
+    }
+
+    // Run several times because unRAID can redraw parts of the header (from your script!)
+    var runs = 0;
+    var maxRuns = 20;
+    var timer = setInterval(function () {
+        createNewMenu();
+        runs++;
+        if (runs >= maxRuns) clearInterval(timer);
+    }, 500);
+
+    // Watch for DOM updates and re-apply
+    var obs = new MutationObserver(function () {
+        createNewMenu();
+    });
+
+    function startObserver() {
+        if (document.body) {
+            obs.observe(document.body, { childList: true, subtree: true });
+            createNewMenu();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver, { once: true });
+    } else {
+        startObserver();
+    }
+})();
+
+// Popup Click Logic
 document.addEventListener('click', function(e) {
-    var clickedLink = e.target.closest('#qf-native-custom-link');
+    var clickedLink = e.target.closest('#qf-custom-btn');
     var customMenu = document.getElementById('my-custom-fav-menu');
 
     if (clickedLink) {
