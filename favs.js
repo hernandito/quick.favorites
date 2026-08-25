@@ -110,13 +110,28 @@
         var tile = leftNavTile();
         if (!tile) return false;
 
-        var item = document.querySelector('#menu .nav-item.QuickFavoritesButton')
-                || document.querySelector('#menu .nav-item.qf-nav-item');
+        var server = document.querySelector('#menu .nav-item.QuickFavoritesButton');
+        var synth  = document.querySelector('#menu .nav-item.qf-synthetic');
 
-        // If Unraid did not render our nav item for any reason, build one.
+        // The server-rendered button arrived after we had already built a
+        // fallback -> drop ours, keep Unraid's.
+        if (server && synth && server !== synth) {
+            synth.parentNode && synth.parentNode.removeChild(synth);
+            synth = null;
+        }
+
+        var item = server || synth;
+
         if (!item) {
+            // Do NOT invent a button while the document is still parsing.
+            // Unraid emits our nav item into the RIGHT nav tile, after the left
+            // tile and after my_usage(), so during parsing it can legitimately
+            // not exist yet. Creating one here is what produced a duplicate
+            // ("two stars") on slow-rendering pages such as /Plugins.
+            if (document.readyState === 'loading') return false;
+
             item = document.createElement('div');
-            item.className = 'nav-item';
+            item.className = 'nav-item qf-synthetic';
             item.appendChild(document.createElement('a'));
         }
 
@@ -159,6 +174,7 @@
         }, 100);
     }
     document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('load', init);   // final de-duplication pass
 })();
 
 /* ---------------------------------------------------------------------- */
