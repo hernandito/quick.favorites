@@ -19,6 +19,12 @@
 (function () {
     'use strict';
 
+    // Single-instance guard. If favs.js is evaluated more than once (double
+    // <script> tag, cached duplicate, re-injected header) the second copy must
+    // not build a second button.
+    if (window.__quickFavoritesLoaded) return;
+    window.__quickFavoritesLoaded = true;
+
     var PLUGIN = 'quick.favorites';
     var LABEL = String((window.qf_settings && window.qf_settings.label) || '\u2B50\u2B50').trim();
 
@@ -106,7 +112,23 @@
         }
     }
 
+    // Collapse any number of Quick Favorites nav items down to exactly one,
+    // always preferring the server-rendered element over a synthetic fallback.
+    // This is the backstop: whatever else goes wrong, only one button survives.
+    function dedupe() {
+        var all = document.querySelectorAll(
+            '#menu .nav-item.QuickFavoritesButton, #menu .nav-item.qf-nav-item, #menu .nav-item.qf-synthetic'
+        );
+        if (all.length < 2) return;
+
+        var keep = document.querySelector('#menu .nav-item.QuickFavoritesButton') || all[0];
+        for (var i = 0; i < all.length; i++) {
+            if (all[i] !== keep && all[i].parentNode) all[i].parentNode.removeChild(all[i]);
+        }
+    }
+
     function placeButton() {
+        dedupe();
         var tile = leftNavTile();
         if (!tile) return false;
 
@@ -174,7 +196,26 @@
         }, 100);
     }
     document.addEventListener('DOMContentLoaded', init);
-    window.addEventListener('load', init);   // final de-duplication pass
+    window.addEventListener('load', init);
+
+    // Watch the nav bar itself. If Unraid streams its button in after we made a
+    // fallback - the race that caused the intermittent double star - this fires
+    // the moment it lands, instead of waiting for a timer.
+    (function watchMenu() {
+        if (typeof MutationObserver === 'undefined') return;
+        var scheduled = false;
+        var obs = new MutationObserver(function () {
+            if (scheduled) return;
+            scheduled = true;
+            setTimeout(function () { scheduled = false; init(); }, 0);
+        });
+        function attach() {
+            var menu = document.getElementById('menu');
+            if (menu) { obs.observe(menu, { childList: true, subtree: true }); return true; }
+            return false;
+        }
+        if (!attach()) document.addEventListener('DOMContentLoaded', attach);
+    })();
 })();
 
 /* ---------------------------------------------------------------------- */

@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.25t">
+<!ENTITY version   "2026.08.25w">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -17,6 +17,7 @@
 
 <CHANGES>
 ###2026.08.25
+- FIXED: Settings Page Column adjustments. 
 - FIXED: Double ⭐⭐ menu appearing in Plugins page.
 - FIXED: Settings page missing customization options. 
 - FIXED: menu item did not appear. The header hook now uses Unraid's supported

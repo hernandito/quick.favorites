@@ -200,7 +200,21 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
     .qf-fa-link { color: #0132f2; text-decoration: none; font-weight: bold; }
     .qf-fa-link:hover { text-decoration: underline; }
     .qf-input { width: 100%; box-sizing: border-box; margin: 0; height: 30px; background: transparent; color: inherit; border: none; border-bottom: 1px solid rgba(128, 128, 128, 0.4); outline: none; }
-    .qf-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+    /* table-layout:fixed makes the column widths below authoritative - without it
+   the browser re-sizes columns to fit content and long paths blow out the row. */
+    .qf-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; table-layout: fixed; min-width: 900px; }
+    .qf-table-scroll { width: 100%; overflow-x: auto; }
+    .qf-table th, .qf-table td { overflow: hidden; }
+    /* Long values (icon paths) clip with an ellipsis when the field is not
+       focused; clicking in still lets you scroll through the whole string. */
+    .qf-input { text-overflow: ellipsis; }
+    .qf-col-drag   { width: 28px; }
+    .qf-col-cat    { width: 13%; }
+    .qf-col-label  { width: 17%; }
+    .qf-col-path   { width: 28%; }
+    .qf-col-icon   { width: 24%; }
+    .qf-col-action { width: 13%; }
+    .qf-col-del    { width: 44px; }
     .qf-table thead tr th { text-align: left; padding: 4px 10px; background-color: rgba(128, 128, 128, 0.35); border-radius: 0px; }
     .qf-row { background-color: rgba(128, 128, 128, 0.08); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 8px; }
     .qf-table tbody tr td { padding: 5px 10px; vertical-align: middle; }
@@ -237,25 +251,26 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
     </div>
 
     <form method="POST" action="/Settings/QuickFavorites">
+        <div class="qf-table-scroll">
         <table class="qf-table">
             <thead>
                 <tr>
-                    <th style="width: 30px;"></th>
-                    <th style="max-width: 140px; width: 10%;">Category</th>
-                    <th style="max-width: 140px; width: 10%;">Label</th>
-                    <th style="width: 30%;">Path / URL</th>
-                    <th style="width: 35%;">Icon Path / FA Class</th>
-                    <th style="width: 15%;">Action</th>
-                    <th style="width: 40px; text-align:center;">Delete</th>
+                    <th class="qf-col-drag"></th>
+                    <th class="qf-col-cat">Category</th>
+                    <th class="qf-col-label">Label</th>
+                    <th class="qf-col-path">Path / URL</th>
+                    <th class="qf-col-icon">Icon</th>
+                    <th class="qf-col-action">Action</th>
+                    <th class="qf-col-del" style="text-align:center;" title="Delete">&times;</th>
                 </tr>
             </thead>
             <tbody id="fav-table-body">
                 <?php foreach ($favs as $index => $data): ?>
                 <tr class="qf-row">
                     <td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
-                    <td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input"></td>
-                    <td style="max-width: 140px;"><input style="font-weight:bold;" type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input"></td>
-                    <td><input type="text" name="path[]" value="<?= htmlspecialchars($data['path']) ?>" required class="qf-input path-input"></td>
+                    <td><input style="font-weight:bold;" type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input" title="<?= htmlspecialchars($data['category']) ?>"></td>
+                    <td><input style="font-weight:bold;" type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input" title="<?= htmlspecialchars($data['label']) ?>"></td>
+                    <td><input type="text" name="path[]" value="<?= htmlspecialchars($data['path']) ?>" required class="qf-input path-input" title="<?= htmlspecialchars($data['path']) ?>"></td>
                     <td>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="preview-wrapper">
@@ -268,7 +283,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                                     <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
                                 <?php endif; ?>
                             </span>
-                            <input type="text" name="icon[]" value="<?= htmlspecialchars($data['icon']) ?>" required class="qf-input" oninput="updatePreview(this)">
+                            <input type="text" name="icon[]" value="<?= htmlspecialchars($data['icon']) ?>" required class="qf-input" oninput="updatePreview(this)" title="<?= htmlspecialchars($data['icon']) ?>">
                         </div>
                     </td>
                     <td>
@@ -287,6 +302,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                 <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
 
         <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;">
             <input type="button" value="Add Row" onclick="addRow()" style="padding: 8px 15px; cursor: pointer; border-radius: 4px;">
@@ -486,8 +502,8 @@ function fetchNativeIcon(btnElement) {
 function addRow() {
     var newRow = `<tr class="qf-row">
         <td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
-        <td style="max-width: 140px;"><input type="text" name="category[]" placeholder="Category" required class="qf-input"></td>
-        <td style="max-width: 140px;"><input type="text" name="label[]" placeholder="Label" required class="qf-input"></td>
+        <td><input type="text" name="category[]" placeholder="Category" required class="qf-input"></td>
+        <td><input type="text" name="label[]" placeholder="Label" required class="qf-input"></td>
         <td><input type="text" name="path[]" placeholder="Folder or URL" required class="qf-input path-input"></td>
         <td>
             <div style="display:flex; align-items:center; gap:8px;">
