@@ -199,32 +199,138 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
 <style>
     .qf-fa-link { color: #0132f2; text-decoration: none; font-weight: bold; }
     .qf-fa-link:hover { text-decoration: underline; }
-    .qf-input { width: 100%; box-sizing: border-box; margin: 0; height: 30px; background: transparent; color: inherit; border: none; border-bottom: 1px solid rgba(128, 128, 128, 0.4); outline: none; }
-    /* table-layout:fixed makes the column widths below authoritative - without it
-   the browser re-sizes columns to fit content and long paths blow out the row. */
-    .qf-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; table-layout: fixed; min-width: 900px; }
-    .qf-table-scroll { width: 100%; overflow-x: auto; }
+    /* ==================== Favorites table ==================== */
+    /* table-layout:fixed makes the column widths authoritative. Without it the
+       browser re-sizes columns to fit content, and one long icon path steals
+       space from Category and Label - which is what was cropping them. */
+    .qf-table-scroll { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+    .qf-table {
+        width: 100%; min-width: 1000px; table-layout: fixed;
+        border-collapse: separate; border-spacing: 0 8px;
+    }
     .qf-table th, .qf-table td { overflow: hidden; }
-    /* Long values (icon paths) clip with an ellipsis when the field is not
-       focused; clicking in still lets you scroll through the whole string. */
-    .qf-input { text-overflow: ellipsis; }
-    .qf-col-drag   { width: 28px; }
-    .qf-col-cat    { width: 13%; }
-    .qf-col-label  { width: 17%; }
-    .qf-col-path   { width: 28%; }
-    .qf-col-icon   { width: 24%; }
-    .qf-col-action { width: 13%; }
-    .qf-col-del    { width: 44px; }
-    .qf-table thead tr th { text-align: left; padding: 4px 10px; background-color: rgba(128, 128, 128, 0.35); border-radius: 0px; }
-    .qf-row { background-color: rgba(128, 128, 128, 0.08); border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 8px; }
-    .qf-table tbody tr td { padding: 5px 10px; vertical-align: middle; }
-    .drag-handle { cursor: grab; color: #888; font-size: 16px; text-align: center; width: 20px; }
+
+    /* Column widths. Percentages are of the WHOLE table, so they must leave room
+       for the two fixed columns: 93% + 80px comes to ~100% at typical widths. */
+    .qf-col-drag   { width: 34px; }
+    .qf-col-cat    { width: 14%; }
+    .qf-col-label  { width: 18%; }
+    .qf-col-path   { width: 27%; }
+    .qf-col-icon   { width: 20%; }
+    .qf-col-action { width: 14%; }
+    .qf-col-del    { width: 46px; }
+
+    /* ---- Header ---- */
+    .qf-table thead th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        opacity: 0.72;
+        background: transparent;
+        border-bottom: 2px solid rgba(128,128,128,0.4);
+        white-space: nowrap;
+    }
+    .qf-table thead th.qf-col-del { text-align: center; }
+
+    /* ---- Rows ---- */
+    .qf-row {
+        background-color: rgba(128, 128, 128, 0.08);
+        transition: background-color 0.12s ease;
+    }
+    .qf-row:hover { background-color: rgba(128, 128, 128, 0.16); }
+    .qf-table tbody td {
+        padding: 7px 12px;
+        vertical-align: middle;
+        border-top: 1px solid rgba(128, 128, 128, 0.2);
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    }
+    .qf-table tbody td:first-child {
+        border-left: 1px solid rgba(128,128,128,0.2);
+        border-top-left-radius: 8px; border-bottom-left-radius: 8px;
+    }
+    .qf-table tbody td:last-child {
+        border-right: 1px solid rgba(128,128,128,0.2);
+        border-top-right-radius: 8px; border-bottom-right-radius: 8px;
+    }
+
+    /* ---- Fields ---- */
+    .qf-input {
+        width: 100%; box-sizing: border-box; margin: 0; height: 32px;
+        background: transparent; color: inherit;
+        border: none; border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+        outline: none; font-size: 13px;
+        text-overflow: ellipsis;            /* long paths clip cleanly */
+        transition: border-color 0.15s ease;
+    }
+    .qf-input:focus { border-bottom-color: #ffca28; }
+    .qf-input:hover { border-bottom-color: rgba(128,128,128,0.7); }
+    .qf-cell-path .qf-input { font-family: monospace; font-size: 12px; }
+    .qf-cell-cat  .qf-input,
+    .qf-cell-label .qf-input { font-weight: 600; }
+
+    /* Action dropdown: strip the native chrome and draw our own caret so it
+       matches the underlined text fields instead of looking like a form widget */
+    select.qf-input {
+        -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        padding-right: 16px; cursor: pointer;
+        background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                          linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position: calc(100% - 9px) 14px, calc(100% - 4px) 14px;
+        background-size: 5px 5px, 5px 5px;
+        background-repeat: no-repeat;
+    }
+
+    /* ---- Drag handle ---- */
+    .drag-handle {
+        cursor: grab; color: #999; font-size: 15px; text-align: center;
+        user-select: none; opacity: 0.55; transition: opacity 0.12s ease;
+    }
+    .qf-row:hover .drag-handle { opacity: 1; }
     .drag-handle:active { cursor: grabbing; }
-    .preview-wrapper { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; flex-shrink: 0; }
-    .preview-wrapper i { color: #777; font-size: 32px; }
-    .preview-wrapper img { max-width: 32px; max-height: 32px; }
+
+    /* ---- Icon preview ---- */
+    .preview-wrapper {
+        width: 28px; height: 28px; display: flex; align-items: center;
+        justify-content: center; background: transparent; border: none; flex-shrink: 0;
+    }
+    .preview-wrapper i { color: #777; font-size: 26px; }
+    .preview-wrapper img { max-width: 28px; max-height: 28px; }
+    .qf-icon-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .qf-icon-cell .qf-input { min-width: 0; }
+
+    /* ---- Buttons ---- */
     .qf-btn-scan { padding: 0 6px; height: 30px; font-size: 11px; cursor: pointer; }
-    .qf-btn-remove { width: 30px; height: 30px; padding: 0; color: #ff4444; text-align: center; cursor: pointer; border: none; background: none; }
+    .qf-btn-remove {
+        width: 26px; height: 26px; padding: 0; line-height: 1;
+        color: #999; background: none; border: none; border-radius: 50%;
+        cursor: pointer; opacity: 0.6;
+        transition: color 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+    }
+    .qf-row:hover .qf-btn-remove { opacity: 1; }
+    .qf-btn-remove:hover { color: #fff; background: #e04747; opacity: 1; }
+
+    /* ---- Action bar under the table ---- */
+    .qf-actions { margin-top: 16px; display: flex; gap: 12px; align-items: center; }
+    .qf-btn {
+        padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;
+        border: 1px solid rgba(128,128,128,0.4); background: rgba(128,128,128,0.08);
+        color: inherit; transition: background 0.12s ease;
+    }
+    .qf-btn:hover { background: rgba(128,128,128,0.18); }
+    .qf-btn-primary {
+        background-color: #ffca28; color: #111; font-weight: 700;
+        padding: 8px 22px; border: none;
+    }
+    .qf-btn-primary:hover { background-color: #ffd75e; }
+
+    @media (max-width: 1100px) {
+        .qf-table thead th { padding: 6px 8px; font-size: 10px; }
+        .qf-table tbody td { padding: 6px 8px; }
+    }
+
     .qf-guide-block { border-radius: 8px; padding: 20px; box-sizing: border-box; border: 1px solid #b5b5b5; border-left: 8px solid #a8a8a9; padding-top: 15px; }
     .qf-notes-area { width: 100%; box-sizing: border-box; min-height: 250px; flex-grow: 1; border: 1px solid rgba(128, 128, 128, 0.4); border-radius: 8px; padding: 10px; background: transparent; color: inherit; font-family: monospace; resize: vertical; }
     .qf-color-text { width: 70px; height: 24px; font-family: monospace; font-size: 12px; text-align: center; background: none; border: none; border-bottom: 1px solid rgba(128,128,128,0.3); color: var(--text-color, inherit); outline: none; }
@@ -261,18 +367,18 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                     <th class="qf-col-path">Path / URL</th>
                     <th class="qf-col-icon">Icon</th>
                     <th class="qf-col-action">Action</th>
-                    <th class="qf-col-del" style="text-align:center;" title="Delete">&times;</th>
+                    <th class="qf-col-del"></th>
                 </tr>
             </thead>
             <tbody id="fav-table-body">
                 <?php foreach ($favs as $index => $data): ?>
                 <tr class="qf-row">
                     <td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
-                    <td><input style="font-weight:bold;" type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input" title="<?= htmlspecialchars($data['category']) ?>"></td>
-                    <td><input style="font-weight:bold;" type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input" title="<?= htmlspecialchars($data['label']) ?>"></td>
-                    <td><input type="text" name="path[]" value="<?= htmlspecialchars($data['path']) ?>" required class="qf-input path-input" title="<?= htmlspecialchars($data['path']) ?>"></td>
+                    <td class="qf-cell-cat"><input type="text" name="category[]" value="<?= htmlspecialchars($data['category']) ?>" required class="qf-input" title="<?= htmlspecialchars($data['category']) ?>"></td>
+                    <td class="qf-cell-label"><input type="text" name="label[]" value="<?= htmlspecialchars($data['label']) ?>" required class="qf-input" title="<?= htmlspecialchars($data['label']) ?>"></td>
+                    <td class="qf-cell-path"><input type="text" name="path[]" value="<?= htmlspecialchars($data['path']) ?>" required class="qf-input path-input" title="<?= htmlspecialchars($data['path']) ?>"></td>
                     <td>
-                        <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="qf-icon-cell">
                             <span class="preview-wrapper">
                                 <?php if (strpos($data['icon'], '/') !== false || strpos($data['icon'], '.') !== false): ?>
                                     <img src="<?= htmlspecialchars($data['icon']) ?>" style="width:28px; height:28px;">
@@ -296,7 +402,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                         </select>
                     </td>
                     <td class="qf-row-right-end" style="text-align:center;">
-                        <button type="button" class="qf-btn-remove" onclick="$(this).closest('tr').remove();"><i class="fa fa-times"></i></button>
+                        <button type="button" class="qf-btn-remove" title="Remove this row" onclick="$(this).closest('tr').remove();"><i class="fa fa-times"></i></button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -304,10 +410,10 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
         </table>
         </div>
 
-        <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;">
-            <input type="button" value="Add Row" onclick="addRow()" style="padding: 8px 15px; cursor: pointer; border-radius: 4px;">
-            <input type="button" value="Cancel" onclick="window.location.href='/Settings'" style="padding: 8px 15px; cursor: pointer; border-radius: 4px;">
-            <input type="submit" name="save_favs" value="Save Settings" style="background-color: #ffca28; color: #111; font-weight: bold; padding: 8px 20px; border-radius: 4px; cursor: pointer; border: none;">
+        <div class="qf-actions">
+            <input type="button" class="qf-btn" value="Add Row" onclick="addRow()">
+            <input type="button" class="qf-btn" value="Cancel" onclick="window.location.href='/Settings'">
+            <input type="submit" class="qf-btn qf-btn-primary" name="save_favs" value="Save Settings">
         </div>
 
         <div style="display: flex; gap: 20px; margin-top: 10px; align-items: stretch; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 15px;">
@@ -502,11 +608,11 @@ function fetchNativeIcon(btnElement) {
 function addRow() {
     var newRow = `<tr class="qf-row">
         <td class="drag-handle" title="Drag to reorder"><i class="fa fa-bars"></i></td>
-        <td><input type="text" name="category[]" placeholder="Category" required class="qf-input"></td>
-        <td><input type="text" name="label[]" placeholder="Label" required class="qf-input"></td>
-        <td><input type="text" name="path[]" placeholder="Folder or URL" required class="qf-input path-input"></td>
+        <td class="qf-cell-cat"><input type="text" name="category[]" placeholder="Category" required class="qf-input"></td>
+        <td class="qf-cell-label"><input type="text" name="label[]" placeholder="Label" required class="qf-input"></td>
+        <td class="qf-cell-path"><input type="text" name="path[]" placeholder="Folder or URL" required class="qf-input path-input"></td>
         <td>
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div class="qf-icon-cell">
                 <span class="preview-wrapper"><i class="fa fa-star"></i></span>
                 <input type="text" name="icon[]" placeholder="fa-star" required class="qf-input" oninput="updatePreview(this)">
             </div>
@@ -521,7 +627,7 @@ function addRow() {
             </select>
         </td>
         <td class="qf-row-right-end" style="text-align:center;">
-            <button type="button" class="qf-btn-remove" onclick="$(this).closest('tr').remove();"><i class="fa fa-times"></i></button>
+            <button type="button" class="qf-btn-remove" title="Remove this row" onclick="$(this).closest('tr').remove();"><i class="fa fa-times"></i></button>
         </td>
     </tr>`;
     $('#fav-table-body').append(newRow);
