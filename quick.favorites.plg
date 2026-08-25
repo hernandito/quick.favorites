@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.08.27o">
+<!ENTITY version "2026.08.27p">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,9 +16,9 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27o
-- Completely removed core file modifications (zero template.php patching).
-- Uses clean client-side element transformation and placement to position the Quick Favorites menu natively at the end of the menu bar.
+###2026.08.27p
+- Added automated global script loader via plugin installation.
+- Automatically loads favs.js across all Unraid pages without touching core files like template.php.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -45,7 +45,7 @@
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<!-- INSTALL SCRIPT -->
+<!-- INSTALL & GLOBAL LOADER SCRIPT -->
 <FILE Run="/bin/bash">
 <INLINE>
 <![CDATA[
@@ -62,6 +62,14 @@ if [ ! -f "$CONF/favorites.json" ]; then
 fi
 touch "$CONF/custom.css"
 touch "$CONF/user_notes.txt"
+
+# Create a global auto-loader file that Unraid processes
+cat << 'EOF' > "$PLUGDIR/loader.page"
+Menu="Utilities"
+Type="xmenu"
+---
+<script src="/plugins/quick.favorites/favs.js"></script>
+EOF
 
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
