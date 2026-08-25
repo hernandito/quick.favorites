@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+
     setupHeaderButton();
     var observer = new MutationObserver(function() {
         setupHeaderButton();

@@ -47,6 +47,7 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
 
+
     #my-custom-fav-menu { 
         display: none; position: absolute; z-index: 99999; 
         border: 1px solid #444; border-radius: 8px; 
