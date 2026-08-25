@@ -69,7 +69,7 @@
         }
     }
 
-    // Run multiple times during load and via observer to handle Unraid dynamic ok redraws
+    // Run multiple times during load and via observer to handle Unraid dynamic redraws
     var runs = 0;
     var timer = setInterval(function() {
         initQuickFavorites();
@@ -87,7 +87,7 @@
     }
 })();
 
-// Global event delegation for script modal/background/log actions inside the popup menu
+// Global event delegation for script actions inside the popup menu
 document.addEventListener('click', function(e) {
     var customMenu = document.getElementById('my-custom-fav-menu');
     if (!customMenu || customMenu.style.display !== 'block') return;
