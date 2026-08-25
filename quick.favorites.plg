@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.08.27k">
+<!ENTITY version "2026.08.27l">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,9 +16,9 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27k
-- Automated native template injection for green-arrow tab positioning.
-- Perfectly matched menu bar height and font styling.
+###2026.08.27l
+- Fixed DOM structure: Quick Favorites now wraps in its own dedicated nav-item container.
+- Clean green-arrow placement after the Scripts tab with matched native menu bar height.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -73,7 +73,7 @@ chmod -R 755 "$PLUGDIR"
 # 2. Clean any prior injection blocks from template.php
 sed -i "/$MARK_START/,/$MARK_END/d" "$TEMPLATE"
 
-# 3. Create the clean injection payload matching the green-arrow tab position & styling
+# 3. Create the clean injection payload with dedicated nav-item wrapper
 TMPFILE="$(mktemp)"
 cat > "$TMPFILE" << 'EOF2'
 <!-- QUICK_FAVORITES_INJECT_START -->
@@ -98,6 +98,10 @@ if (file_exists("/usr/local/emhttp/plugins/quick.favorites/popup.php")) {
         var menuBar = document.querySelector('div#menu');
         if (!menuBar) return;
 
+        // Create a dedicated nav-item container matching Unraid's layout architecture
+        var navItemDiv = document.createElement('div');
+        navItemDiv.className = 'nav-item';
+
         var btn = document.createElement('a');
         btn.id = 'qf-custom-btn';
         btn.href = '#';
@@ -105,12 +109,16 @@ if (file_exists("/usr/local/emhttp/plugins/quick.favorites/popup.php")) {
         btn.title = 'Quick Favorites';
         btn.style.cssText = 'height: 100%; display: inline-flex; align-items: center; padding: 0 14px; cursor: pointer; text-decoration: none; color: inherit; font-size: 13px; font-weight: bold;';
 
-        // Position precisely right after the Scripts tab (green arrow location)
-        var scriptTab = menuBar.querySelector('a[href*="Script"]') || menuBar.querySelector('a:nth-last-child(7)');
-        if (scriptTab) {
-            scriptTab.after(btn);
+        navItemDiv.appendChild(btn);
+
+        // Position precisely as its own container right after the Scripts tab
+        var scriptTabLink = menuBar.querySelector('a[href*="Script"]');
+        var scriptNavItem = scriptTabLink ? scriptTabLink.closest('.nav-item') : null;
+
+        if (scriptNavItem) {
+            scriptNavItem.after(navItemDiv);
         } else {
-            menuBar.appendChild(btn);
+            menuBar.appendChild(navItemDiv);
         }
     }
 
