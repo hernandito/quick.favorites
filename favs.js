@@ -22,7 +22,7 @@
         }
 
         var favTab = findMenuItemByText('Favorites') || findMenuItemByText('⭐⭐');
-        if (!favTab) return;
+        if (!favTab) return false; // Not rendered yet, retry
 
         // If not already transformed, clone to drop native Unraid navigation handlers
         if (favTab.id !== 'qf-custom-btn') {
@@ -67,24 +67,18 @@
                 }
             }, true);
         }
+        return true;
     }
 
-    // Run multiple times during load and via observer to handle Unraid dynamic redraws
-    var runs = 0;
+    // Aggressive retry loop until Unraid's menu renders on any page
+    var attempts = 0;
     var timer = setInterval(function() {
-        initQuickFavorites();
-        runs++;
-        if (runs >= 30) clearInterval(timer);
-    }, 400);
-
-    var obs = new MutationObserver(function() {
-        initQuickFavorites();
-    });
-
-    if (document.body) {
-        obs.observe(document.body, { childList: true, subtree: true });
-        initQuickFavorites();
-    }
+        var success = initQuickFavorites();
+        attempts++;
+        if (success || attempts >= 50) {
+            clearInterval(timer);
+        }
+    }, 200);
 })();
 
 // Global event delegation for script actions inside the popup menu

@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "quick.favorites">
 <!ENTITY author "hernandito">
-<!ENTITY version "2026.08.27p">
+<!ENTITY version "2026.08.27q">
 <!ENTITY github "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
@@ -16,9 +16,8 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27p
-- Added automated global script loader via plugin installation.
-- Automatically loads favs.js across all Unraid pages without touching core files like template.php.
+###2026.08.27q
+- Added automated global header hook in installer to load favs.js across all Unraid pages.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -45,7 +44,7 @@
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
 </FILE>
 
-<!-- INSTALL & GLOBAL LOADER SCRIPT -->
+<!-- INSTALL SCRIPT -->
 <FILE Run="/bin/bash">
 <INLINE>
 <![CDATA[
@@ -63,16 +62,16 @@ fi
 touch "$CONF/custom.css"
 touch "$CONF/user_notes.txt"
 
-# Create a global auto-loader file that Unraid processes
-cat << 'EOF' > "$PLUGDIR/loader.page"
-Menu="Utilities"
-Type="xmenu"
----
-<script src="/plugins/quick.favorites/favs.js"></script>
-EOF
-
 chown -R root:root "$PLUGDIR"
 chmod -R 755 "$PLUGDIR"
+
+# Safely inject the global script tag into Unraid's header file
+HEADER_FILE="/usr/local/emhttp/plugins/dynamix/include/Header.php"
+SCRIPT_TAG="<script src=\"/plugins/$NAME/favs.js\"></script>"
+
+if [ -f "$HEADER_FILE" ]; then
+    sed -i "s|</html>|$SCRIPT_TAG\n</html>|g" "$HEADER_FILE"
+fi
 
 echo "----------------------------------------------------"
 echo " Quick Favorites v&version; installed successfully."
@@ -86,8 +85,15 @@ echo "----------------------------------------------------"
 <INLINE>
 <![CDATA[
 NAME="quick.favorites"
+HEADER_FILE="/usr/local/emhttp/plugins/dynamix/include/Header.php"
+SCRIPT_TAG="<script src=\"/plugins/$NAME/favs.js\"></script>"
+
+if [ -f "$HEADER_FILE" ]; then
+    sed -i "s|$SCRIPT_TAG||g" "$HEADER_FILE"
+fi
+
 rm -rf "/usr/local/emhttp/plugins/$NAME"
-echo "Quick Favorites files removed."
+echo "Quick Favorites files and global hook removed."
 ]]>
 </INLINE>
 </FILE>
