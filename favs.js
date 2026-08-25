@@ -1,3 +1,62 @@
+(function () {
+    function createNewMenu() {
+        if (document.getElementById('qf-custom-btn')) return;
+        
+        var menuBar = document.querySelector('div#menu');
+        if (!menuBar) return;
+
+        // 1. Create a dedicated nav-item container matching Unraid's layout architecture
+        var navItemDiv = document.createElement('div');
+        navItemDiv.className = 'nav-item';
+
+        var btn = document.createElement('a');
+        btn.id = 'qf-custom-btn';
+        btn.href = '#';
+        // Pulls label from global settings or defaults to stars
+        btn.innerHTML = (typeof qf_settings !== 'undefined' && qf_settings.label) ? qf_settings.label : '⭐⭐';
+        btn.title = 'Quick Favorites';
+        btn.style.cssText = 'height: 100%; display: inline-flex; align-items: center; padding: 0 14px; cursor: pointer; text-decoration: none; color: inherit; font-size: 13px; font-weight: bold;';
+
+        navItemDiv.appendChild(btn);
+
+        // 2. Find the core "Settings" tab link as a universal, reliable anchor
+        var allLinks = menuBar.querySelectorAll('a');
+        var settingsNode = null;
+
+        for (var i = 0; i < allLinks.length; i++) {
+            var href = allLinks[i].getAttribute('href') || '';
+            if (allLinks[i].textContent.trim() === 'Settings' || href.includes('Settings')) {
+                settingsNode = allLinks[i].closest('.nav-item') || allLinks[i].parentElement;
+                break;
+            }
+        }
+
+        // 3. Insert right after Settings, or fallback to the end of the menu if Settings isn't found
+        if (settingsNode && settingsNode.parentElement === menuBar) {
+            settingsNode.after(navItemDiv);
+        } else {
+            menuBar.appendChild(navItemDiv);
+        }
+    }
+
+    var runs = 0;
+    var timer = setInterval(function () {
+        createNewMenu();
+        runs++;
+        if (runs >= 30) clearInterval(timer);
+    }, 400);
+
+    var obs = new MutationObserver(function () {
+        createNewMenu();
+    });
+
+    if (document.body) {
+        obs.observe(document.body, { childList: true, subtree: true });
+        createNewMenu();
+    }
+})();
+
+// Full click handler for the popup menu and script execution
 document.addEventListener('click', function(e) {
     var clickedLink = e.target.closest('#qf-custom-btn');
     var customMenu = document.getElementById('my-custom-fav-menu');
