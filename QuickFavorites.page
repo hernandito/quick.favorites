@@ -292,7 +292,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                 <h3 style="margin-top: 0; font-size: 16px;">Appearance</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <div>
-                        <label>Header Title:</label>
+                        <label>Headerrrrr Title:</label>
                         <input type="text" name="menu_title" value="<?= htmlspecialchars($style['menu_title']) ?>" class="qf-input" style="font-size: 13px; font-weight: bold;">
                     </div>
                     <div>
