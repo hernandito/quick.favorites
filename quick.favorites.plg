@@ -16,8 +16,9 @@
         min="6.12.0">
 
 <CHANGES>
-###2026.08.27g
-- Reverted to safe, native Unraid Button menu injection.
+###2026.08.27h
+- Fixed Plugin Manager icon naming requirement.
+- Safe, native Unraid Button menu injection.
 </CHANGES>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
@@ -36,7 +37,8 @@
   <URL>https://raw.githubusercontent.com/&github;/main/log_api.php</URL>
 </FILE>
 
-<FILE Name="&plugdir;/icon.png">
+<!-- FIX: Unraid requires the icon to be named exactly after the plugin to show in the Plugins tab -->
+<FILE Name="&plugdir;/&name;.png">
   <URL>https://raw.githubusercontent.com/&github;/main/icon.png</URL>
 </FILE>
 
