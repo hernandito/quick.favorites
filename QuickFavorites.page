@@ -5,6 +5,7 @@ Icon="star"
 Tabs="true"
 Markdown="false"
 ---
+
 <?php
 $cfg_dir = "/boot/config/plugins/quick.favorites";
 $json_file = "$cfg_dir/favorites.json";
