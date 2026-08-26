@@ -28,6 +28,15 @@
     var PLUGIN = 'quick.favorites';
     var LABEL = String((window.qf_settings && window.qf_settings.label) || '\u2B50\u2B50').trim();
 
+    // Open on click (default) or on hover. Pointer devices without hover
+    // (touch screens) always fall back to click, otherwise the menu would be
+    // unreachable - a tap fires no mouseenter.
+    var canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
+    var HOVER = ((window.qf_settings && window.qf_settings.open_mode) === 'hover') && canHover;
+    var OPEN_DELAY = parseInt((window.qf_settings && window.qf_settings.hover_delay), 10);
+    if (isNaN(OPEN_DELAY) || OPEN_DELAY < 0) OPEN_DELAY = 250;
+    var CLOSE_DELAY = 400;   // grace period while crossing the gap to the popup
+
     /* ------------------------------------------------------------------ */
     /* 1. Popup payload                                                    */
     /* ------------------------------------------------------------------ */
@@ -36,7 +45,7 @@
 
     function loadPopup(done) {
         var existing = document.getElementById('my-custom-fav-menu');
-        if (existing) { if (done) done(existing); return; }
+        if (existing) { bindPopupHover(existing); if (done) done(existing); return; }
         if (popupLoading) return;
         popupLoading = true;
 
@@ -48,7 +57,9 @@
                 host.innerHTML = html; // <style> blocks inserted this way still apply
                 document.body.appendChild(host);
                 popupLoading = false;
-                if (done) done(document.getElementById('my-custom-fav-menu'));
+                var built = document.getElementById('my-custom-fav-menu');
+                bindPopupHover(built);
+                if (done) done(built);
             })
             .catch(function (err) {
                 popupLoading = false;
@@ -65,23 +76,63 @@
         var width = menu.offsetWidth || 480;
         var center = rect.left + window.scrollX + (rect.width / 2);
         var left = Math.max(15, Math.min(center - (width / 2), window.innerWidth - width - 15));
-        menu.style.top = (rect.bottom + window.scrollY + 10) + 'px';
+        // In hover mode keep the popup tight under the button. A large gap is a
+        // dead zone: the pointer leaves the button before reaching the menu.
+        menu.style.top = (rect.bottom + window.scrollY + (HOVER ? 2 : 10)) + 'px';
         menu.style.left = left + 'px';
     }
 
-    function toggleMenu() {
+    var openTimer = null, closeTimer = null;
+
+    function cancelTimers() {
+        if (openTimer)  { clearTimeout(openTimer);  openTimer = null; }
+        if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    }
+
+    function isOpen() {
+        var m = document.getElementById('my-custom-fav-menu');
+        return !!m && m.style.display === 'block';
+    }
+
+    function openMenu() {
         var anchor = document.getElementById('qf-custom-btn');
         if (!anchor) return;
-
         loadPopup(function (menu) {
             if (!menu) return;
-            if (menu.style.display === 'block') {
-                menu.style.display = 'none';
-            } else {
-                menu.style.display = 'block';
-                positionMenu(menu, anchor);
-            }
+            menu.style.display = 'block';
+            positionMenu(menu, anchor);
         });
+    }
+
+    function closeMenu() {
+        var m = document.getElementById('my-custom-fav-menu');
+        if (m) m.style.display = 'none';
+    }
+
+    function toggleMenu() {
+        cancelTimers();
+        if (isOpen()) closeMenu(); else openMenu();
+    }
+
+    // ---- hover handling ----
+    function scheduleOpen() {
+        cancelTimers();
+        if (isOpen()) return;
+        openTimer = setTimeout(function () { openTimer = null; openMenu(); }, OPEN_DELAY);
+    }
+
+    function scheduleClose() {
+        cancelTimers();
+        closeTimer = setTimeout(function () { closeTimer = null; closeMenu(); }, CLOSE_DELAY);
+    }
+
+    // Keep the menu open while the pointer is inside it, and close once it
+    // leaves. Bound when the popup is first built.
+    function bindPopupHover(menu) {
+        if (!HOVER || !menu || menu._qfHoverBound) return;
+        menu._qfHoverBound = true;
+        menu.addEventListener('mouseenter', cancelTimers, false);
+        menu.addEventListener('mouseleave', scheduleClose, false);
     }
 
     window.qfToggleMenu = toggleMenu;
@@ -178,6 +229,12 @@
                 e.stopPropagation();
                 toggleMenu();
             }, false);
+
+            // Hover mode is additive - click still works exactly as before.
+            if (HOVER) {
+                item.addEventListener('mouseenter', scheduleOpen, false);
+                item.addEventListener('mouseleave', scheduleClose, false);
+            }
         }
         return true;
     }

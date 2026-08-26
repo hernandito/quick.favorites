@@ -138,6 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_favs'])) {
         'icon_color' => $_POST['icon_color'] ?? '#FFCA28',
         'label_color' => $_POST['label_color'] ?? '#CCCCCC',
         // Optional tab hiding, applied as CSS by QuickFavoritesButton.page
+        'open_mode' => $_POST['open_mode'] ?? 'click',
+        'hover_delay' => $_POST['hover_delay'] ?? '250',
         'hide_stats' => $_POST['hide_stats'] ?? 'no',
         'hide_favorites' => $_POST['hide_favorites'] ?? 'no'
     ];
@@ -184,6 +186,8 @@ $defaults = [
     'section_border_color' => '#333333',
     'icon_color' => '#e0e0e0',
     'label_color' => '#cccccc',
+    'open_mode' => 'click',
+    'hover_delay' => '250',
     'hide_stats' => 'no',
     'hide_favorites' => 'no'
 ];
@@ -465,6 +469,18 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                     </div>
 
                     <div>
+                        <label>Open Menu On:</label>
+                        <select name="open_mode" id="qf-open-mode" class="qf-input" style="font-size: 12px; font-weight: bold;">
+                            <option value="click" <?= $style['open_mode'] === 'click' ? 'selected' : '' ?>>Click</option>
+                            <option value="hover" <?= $style['open_mode'] === 'hover' ? 'selected' : '' ?>>Hover</option>
+                        </select>
+                    </div>
+                    <div id="qf-hover-delay-row">
+                        <label>Hover Delay (ms):</label>
+                        <input type="number" name="hover_delay" value="<?= htmlspecialchars($style['hover_delay']) ?>" class="qf-input" style="font-size: 12px; font-weight: bold;" min="0" max="2000" step="50">
+                        <div style="font-size: 11px; opacity: 0.75; line-height: 1.4; margin-top: 3px;">Pause before the menu opens. 250 is a good default; raise it if the menu opens while you are just passing over the button.</div>
+                    </div>
+                    <div>
                         <label>Hide "Stats" Tab:</label>
                         <select name="hide_stats" class="qf-input" style="font-size: 12px; font-weight: bold;">
                             <option value="no" <?= $style['hide_stats'] === 'no' ? 'selected' : '' ?>>No</option>
@@ -562,6 +578,14 @@ $(function() {
         });
     }
 
+    // The hover delay only matters in hover mode - hide it otherwise.
+    function qfSyncOpenMode() {
+        var hover = $('#qf-open-mode').val() === 'hover';
+        $('#qf-hover-delay-row').toggle(hover);
+    }
+    qfSyncOpenMode();
+    $(document).on('change', '#qf-open-mode', qfSyncOpenMode);
+
     // 2. Hybrid colour picker sync
     $(document).on('input change', '.color-picker-sync', function() {
         var hex = $(this).val().toUpperCase();
@@ -651,6 +675,8 @@ function copyAppearanceSettings() {
     var text = "--- Theme Backup ---\n";
     text += "Menu Bar Button: " + $('input[name="header_label"]').val() + "\n";
     text += "Header Title: " + $('input[name="menu_title"]').val() + "\n";
+    text += "Open Menu On: " + $('select[name="open_mode"]').val() + "\n";
+    text += "Hover Delay: " + $('input[name="hover_delay"]').val() + "ms\n";
     text += "Icon Size: " + $('input[name="icon_size"]').val() + "px\n";
     text += "Grid Columns: " + $('input[name="grid_columns"]').val() + "\n";
     text += "Menu Width: " + $('input[name="menu_width"]').val() + "px\n";
@@ -705,6 +731,9 @@ function resetAppearanceDefaults() {
         $('input[name="grid_columns"]').val('4');
         $('input[name="menu_width"]').val('480');
         $('select[name="show_header"]').val('yes');
+        $('select[name="open_mode"]').val('click');
+        $('input[name="hover_delay"]').val('250');
+        qfSyncOpenMode();
         $('select[name="hide_stats"]').val('no');
         $('select[name="hide_favorites"]').val('no');
 
