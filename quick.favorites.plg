@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.26j">
+<!ENTITY version   "2026.08.26k">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -71,7 +71,7 @@ mkdir -p /usr/local/emhttp/plugins/quick.favorites
 
 <FILE Name="&plugdir;/popup.php">
   <URL>https://raw.githubusercontent.com/&github;/main/popup.php</URL>
-  <MD5>f3f80e021f29832daa6ed616bb8013b0</MD5>
+  <MD5>405bd24e0d171d81e406477a07255a40</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/favs.js">
