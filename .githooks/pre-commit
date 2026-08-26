@@ -1,0 +1,115 @@
+#!/bin/sh
+#
+# .githooks/pre-commit
+#
+# Runs automatically every time you commit (GitHub Desktop included).
+# It bumps <!ENTITY version> and refreshes every <MD5> in quick.favorites.plg,
+# then stages the result so it lands in the same commit.
+#
+# Uses only tools bundled with Git, so it works identically in Windows Git Bash
+# and on the unRAID console. No python required.
+#
+# Hashes come from `git show :file` - the STAGED blob, which is exactly what
+# GitHub will serve after the push. That sidesteps the CRLF trap: .gitattributes
+# `* text=auto` stores LF, so hashing the working copy on Windows would produce
+# a hash that never matches the download, and Unraid aborts with "bad file MD5".
+#
+# To skip it for one commit:  git commit --no-verify
+#
+
+PLG="quick.favorites.plg"
+
+# Only act if the .plg is present in this repo
+[ -f "$PLG" ] || exit 0
+
+# If nothing is staged, git is about to abort with "nothing to commit" anyway.
+# Bumping the version here would leave the .plg modified for a commit that never
+# happens. (GitHub Desktop cannot reach this state - it disables Commit when
+# nothing is selected - but the command line can.)
+if git diff --cached --quiet 2>/dev/null; then
+    exit 0
+fi
+
+# ---- 1. Work out the next version -------------------------------------------
+CURRENT=$(sed -n 's/.*<!ENTITY version[[:space:]]*"\([^"]*\)".*/\1/p' "$PLG" | head -1)
+TODAY=$(date +%Y.%m.%d)
+
+case "$CURRENT" in
+    "$TODAY"*)
+        SUFFIX=${CURRENT#"$TODAY"}
+        if [ -z "$SUFFIX" ]; then
+            NEXT="${TODAY}a"
+        else
+            NEXT="${TODAY}$(printf '%s' "$SUFFIX" | tr 'a-y' 'b-z')"
+        fi
+        ;;
+    *)
+        NEXT="${TODAY}a"
+        ;;
+esac
+
+# Unraid compares plugin versions with strcmp(), so the new string MUST sort
+# after the old one or the update is treated as a downgrade and never offered.
+if [ "$NEXT" = "$CURRENT" ] || [ "$NEXT" \< "$CURRENT" ]; then
+    echo "pre-commit: cannot bump version past '$CURRENT' (would be '$NEXT')."
+    echo "pre-commit: you have used every suffix for today. Edit $PLG by hand."
+    exit 1
+fi
+
+# ---- 2. Hash each shipped file, as Git has it staged -------------------------
+MAP=$(mktemp)
+trap 'rm -f "$MAP"' EXIT
+
+grep -o '<URL>[^<]*</URL>' "$PLG" \
+  | sed 's|<URL>||; s|</URL>||' \
+  | while IFS= read -r url; do
+        file=${url##*/}                      # basename of the URL
+        [ -n "$file" ] || continue
+
+        if git cat-file -e ":$file" 2>/dev/null; then
+            hash=$(git show ":$file" | md5sum | cut -d' ' -f1)
+        elif [ -f "$file" ]; then
+            # Not tracked yet - fall back to the working copy, stripping CR so
+            # the hash still matches what Git will normalise it to.
+            hash=$(tr -d '\r' < "$file" | md5sum | cut -d' ' -f1)
+        else
+            echo "pre-commit: WARNING - no file found for $file (no MD5 written)"
+            continue
+        fi
+
+        printf '%s\t%s\n' "$file" "$hash" >> "$MAP"
+    done
+
+# ---- 3. Rewrite the .plg ----------------------------------------------------
+TMP=$(mktemp)
+awk -v map="$MAP" -v ver="$NEXT" '
+BEGIN {
+    while ((getline line < map) > 0) {
+        split(line, a, "\t")
+        H[a[1]] = a[2]
+    }
+}
+{
+    if ($0 ~ /<!ENTITY version/) {
+        sub(/version[ \t]+"[^"]*"/, "version   \"" ver "\"")
+    }
+    if ($0 ~ /<MD5>/) next        # drop stale hashes, we re-add below
+    print
+    if ($0 ~ /<URL>/) {
+        u = $0
+        sub(/.*<URL>/, "", u)
+        sub(/<\/URL>.*/, "", u)
+        n = split(u, parts, "/")
+        f = parts[n]
+        if (f in H) print "  <MD5>" H[f] "</MD5>"
+    }
+}
+' "$PLG" > "$TMP" || { echo "pre-commit: failed to rewrite $PLG"; rm -f "$TMP"; exit 1; }
+
+mv "$TMP" "$PLG"
+
+# ---- 4. Stage it so it is part of THIS commit --------------------------------
+git add "$PLG"
+
+echo "pre-commit: $PLG -> version $NEXT, $(wc -l < "$MAP" | tr -d ' ') MD5 hashes refreshed"
+exit 0

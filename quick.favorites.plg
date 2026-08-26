@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.26h">
+<!ENTITY version   "2026.08.26i">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -17,6 +17,7 @@
 
 <CHANGES>
 ###2026.08.26
+- ADDED FEATURE: Automatically fix .plg file when committing to GitHub
 - ADDED FEATURE: User control over how meny button operates. On click or on hover.
 - FIXED: Settings column width adjustments.
 
@@ -40,7 +41,6 @@
       // If file already exists, do not overwrite
       if (file_exists($name)) { my_logger("skipping: $name already exists"); }
 
-  ...unless an <MD5>/<SHA256> is supplied and mismatches. So on an upgrade every
   download is silently skipped and the old files stay in place, even though the
   version bumped and the install log reports success.
 
@@ -61,37 +61,37 @@ mkdir -p /usr/local/emhttp/plugins/quick.favorites
 
 <FILE Name="&plugdir;/QuickFavorites.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
-  <MD5>e39f457cfc29f24f9613bb30aa3a4d0b</MD5>
+  <MD5></MD5>
 </FILE>
 
 <FILE Name="&plugdir;/QuickFavoritesButton.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavoritesButton.page</URL>
-  <MD5>307d92853ad5e834830a71af810be73d</MD5>
+  <MD5></MD5>
 </FILE>
 
 <FILE Name="&plugdir;/popup.php">
   <URL>https://raw.githubusercontent.com/&github;/main/popup.php</URL>
-  <MD5>f3f80e021f29832daa6ed616bb8013b0</MD5>
+  <MD5></MD5>
 </FILE>
 
 <FILE Name="&plugdir;/favs.js">
   <URL>https://raw.githubusercontent.com/&github;/main/favs.js</URL>
-  <MD5>507eed35422a881d366632261df76892</MD5>
+  <MD5></MD5>
 </FILE>
 
 <FILE Name="&plugdir;/log_api.php">
   <URL>https://raw.githubusercontent.com/&github;/main/log_api.php</URL>
-  <MD5>286a8fcc0d6e80fb506fff1cb725b7af</MD5>
+  <MD5></MD5>
 </FILE>
 
 <FILE Name="&plugdir;/&name;.png">
   <URL>https://raw.githubusercontent.com/&github;/main/icon.png</URL>
-  <MD5>dd1cfc11383bf54f852fd316e43b5882</MD5>
+  <MD5></MD5>
 </FILE>
 
 <FILE Name="&plugdir;/README.md">
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
-  <MD5>4b93403dac653321251f006c558652b0</MD5>
+  <MD5></MD5>
 </FILE>
 
 <!-- INSTALL SCRIPT -->
