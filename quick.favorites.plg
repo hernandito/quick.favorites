@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.26c">
+<!ENTITY version   "2026.08.26d">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -60,30 +60,37 @@ mkdir -p /usr/local/emhttp/plugins/quick.favorites
 
 <FILE Name="&plugdir;/QuickFavorites.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
+  <MD5>8a2de2597d4e57ab0d3be46853657e38</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/QuickFavoritesButton.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavoritesButton.page</URL>
+  <MD5>e33f9a3d5f0cb48257cc8cb201b1febe</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/popup.php">
   <URL>https://raw.githubusercontent.com/&github;/main/popup.php</URL>
+  <MD5>f3f80e021f29832daa6ed616bb8013b0</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/favs.js">
   <URL>https://raw.githubusercontent.com/&github;/main/favs.js</URL>
+  <MD5>83e1069c0119a606dedeea870e92a76f</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/log_api.php">
   <URL>https://raw.githubusercontent.com/&github;/main/log_api.php</URL>
+  <MD5>286a8fcc0d6e80fb506fff1cb725b7af</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/&name;.png">
   <URL>https://raw.githubusercontent.com/&github;/main/icon.png</URL>
+  <MD5>dd1cfc11383bf54f852fd316e43b5882</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/README.md">
   <URL>https://raw.githubusercontent.com/&github;/main/description.txt</URL>
+  <MD5>2cc077e912af95b79a1ed4fc2fdc8c6f</MD5>
 </FILE>
 
 <!-- INSTALL SCRIPT -->
