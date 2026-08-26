@@ -395,7 +395,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                                     <?php $fa = (strpos($data['icon'], 'fa-') === 0) ? $data['icon'] : 'fa-' . $data['icon']; ?>
                                     <i class="fa <?= htmlspecialchars($fa) ?>" style="width:28px; text-align:center;"></i>
                                 <?php else: ?>
-                                    <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
+                                    <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 22px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
                                 <?php endif; ?>
                             </span>
                             <input type="text" name="icon[]" value="<?= htmlspecialchars($data['icon']) ?>" required class="qf-input" oninput="updatePreview(this)" title="<?= htmlspecialchars($data['icon']) ?>">
