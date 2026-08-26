@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.26b">
+<!ENTITY version   "2026.08.26c">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -18,7 +18,7 @@
 <CHANGES>
 ###2026.08.26
 - FIXED: Settings column width adjustments.
-- Test: Plugin update.
+
 
 ###2026.08.25
 - FIXED: Settings Page Column adjustments. 
@@ -30,6 +30,33 @@
 - The button is relocated to the end of the navigation tab strip.
 - No Unraid core file is modified, so the hook survives reboots and OS upgrades.
 </CHANGES>
+
+<!--
+  CLEAR THE PLUGIN DIRECTORY BEFORE ANY <FILE> IS FETCHED.
+
+  Unraid's plugin script will NOT overwrite a file that already exists:
+
+      // If file already exists, do not overwrite
+      if (file_exists($name)) { my_logger("skipping: $name already exists"); }
+
+  ...unless an <MD5>/<SHA256> is supplied and mismatches. So on an upgrade every
+  download is silently skipped and the old files stay in place, even though the
+  version bumped and the install log reports success.
+
+  <FILE> elements run in document order, so wiping the directory here means the
+  download entries below always land on a clean folder.
+
+  This only touches /usr/local/emhttp (tmpfs). User settings live in
+  /boot/config/plugins/quick.favorites and are never affected.
+-->
+<FILE Run="/bin/bash">
+<INLINE>
+<![CDATA[
+rm -rf /usr/local/emhttp/plugins/quick.favorites
+mkdir -p /usr/local/emhttp/plugins/quick.favorites
+]]>
+</INLINE>
+</FILE>
 
 <FILE Name="&plugdir;/QuickFavorites.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
