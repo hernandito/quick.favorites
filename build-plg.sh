@@ -71,7 +71,7 @@ def expand(s):
         s = re.sub(r'&(\w+);', lambda m: ents.get(m.group(1), m.group(0)), s)
     return s
 
-updated, missing = [], []
+updated, missing, crlf_fixed = [], [], []
 
 def handle(block):
     m = re.search(r'<URL>(.*?)</URL>', block, re.S)
@@ -81,7 +81,18 @@ def handle(block):
     if not os.path.isfile(local):
         missing.append(local)
         return block
-    digest = hashlib.md5(open(local, 'rb').read()).hexdigest()
+    raw = open(local, 'rb').read()
+    # Hash the bytes GIT WILL STORE, not the bytes on disk. .gitattributes
+    # `* text=auto` normalises CRLF -> LF on commit, so a CRLF working copy
+    # would otherwise be hashed one way and served from GitHub another - and
+    # Unraid then aborts the install with "bad file MD5".
+    if b'\x00' not in raw:                       # treat as text, not binary
+        normalised = raw.replace(b'\r\n', b'\n')
+        if normalised != raw:
+            crlf_fixed.append(local)
+            open(local, 'wb').write(normalised)   # fix the working copy too
+            raw = normalised
+    digest = hashlib.md5(raw).hexdigest()
     updated.append((local, digest))
     block = re.sub(r'\s*<MD5>.*?</MD5>', '', block, flags=re.S)   # drop any old tag
     return block.replace('</URL>', '</URL>\n  <MD5>' + digest + '</MD5>')
@@ -92,6 +103,8 @@ open(plg, 'w', encoding='utf-8').write(text)
 print("  version -> " + new_version + "\n")
 for name, digest in updated:
     print("  {:<28} {}".format(name, digest))
+if crlf_fixed:
+    print("\n  Converted CRLF -> LF (and hashed the LF form): " + ", ".join(crlf_fixed))
 if missing:
     print("\n  WARNING: no local file found for: " + ", ".join(missing))
     print("  Those <FILE> blocks were left without an MD5.")

@@ -242,7 +242,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
     }
     .qf-row:hover { background-color: rgba(128, 128, 128, 0.16); }
     .qf-table tbody td {
-        padding: 7px 12px;
+        padding: 0 12px;
         vertical-align: middle;
         border-top: 1px solid rgba(128, 128, 128, 0.2);
         border-bottom: 1px solid rgba(128, 128, 128, 0.2);
@@ -268,6 +268,9 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
         text-overflow: ellipsis;            /* long paths clip cleanly */
         transition: border-color 0.15s ease;
     }
+    /* Vertical rhythm: the margin is what keeps the underline clear of the row
+       border, and it survives a custom.css that zeroes the cell padding. */
+    .qf-table tbody td .qf-input { margin: 8px 0; height: 30px; }
     .qf-input:focus { border-bottom-color: #ffca28; }
     .qf-input:hover { border-bottom-color: rgba(128,128,128,0.7); }
     .qf-cell-path .qf-input { font-family: monospace; font-size: 12px; }
@@ -301,7 +304,8 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
     }
     .preview-wrapper i { color: #777; font-size: 26px; }
     .preview-wrapper img { max-width: 28px; max-height: 28px; }
-    .qf-icon-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .qf-icon-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .qf-table tbody td .preview-wrapper { margin: 8px 0; }
     .qf-icon-cell .qf-input { min-width: 0; }
 
     /* ---- Buttons ---- */
@@ -395,7 +399,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                                     <?php $fa = (strpos($data['icon'], 'fa-') === 0) ? $data['icon'] : 'fa-' . $data['icon']; ?>
                                     <i class="fa <?= htmlspecialchars($fa) ?>" style="width:28px; text-align:center;"></i>
                                 <?php else: ?>
-                                    <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 22px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
+                                    <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
                                 <?php endif; ?>
                             </span>
                             <input type="text" name="icon[]" value="<?= htmlspecialchars($data['icon']) ?>" required class="qf-input" oninput="updatePreview(this)" title="<?= htmlspecialchars($data['icon']) ?>">
