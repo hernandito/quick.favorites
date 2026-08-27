@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.27c">
+<!ENTITY version   "2026.08.27d">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -18,6 +18,7 @@
 <CHANGES>
 ###2026.08.27
 - MAINTENANCE: Provided forum support link to the plugin.  
+- DONATION: Added Donation link.
 
 ###2026.08.26
 - ADDED FEATURE: Automatically fix .plg file when committing to GitHub
