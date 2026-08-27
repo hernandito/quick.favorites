@@ -10,6 +10,12 @@ Stop clicking through endless tabs to find your most-used settings, Docker conta
 
 
 ---
+<a href="https://www.buymeacoffee.com/hernandito" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+       alt="Buy Me a Coffee"
+       width="122"
+       height="34">
+</a>
 
 ## ✨ Features
 * **Everywhere You Need It:** The menu attaches to the Star icon in the top right of your unRAIDheader, making it accessible from any page.
