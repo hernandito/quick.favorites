@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.26k">
+<!ENTITY version   "2026.08.27a">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -12,10 +12,13 @@
         version="&version;"
         launch="Settings/QuickFavorites"
         pluginURL="&pluginURL;"
-        support="https://github.com/&github;"
+        support="https://forums.unraid.net/topic/197973-plugin-quick-favorites-custom-favorites-menu-pop-up/"
         min="6.12.0">
 
 <CHANGES>
+###2026.08.27
+- MAINTENANCE: Provided forum support link to the plugin.  
+
 ###2026.08.26
 - ADDED FEATURE: Automatically fix .plg file when committing to GitHub
 - ADDED FEATURE: User control over how meny button operates. On click or on hover.
