@@ -1,4 +1,4 @@
-🌟 Quick Favorites for Unraid
+# 🌟 Quick Favorites for Unraid
 
 ![Quick Favorites Menu](screenshots/menu-open.png)
 
