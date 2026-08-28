@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.28a">
+<!ENTITY version   "2026.08.28b">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -83,7 +83,7 @@ mkdir -p /usr/local/emhttp/plugins/quick.favorites
 
 <FILE Name="&plugdir;/favs.js">
   <URL>https://raw.githubusercontent.com/&github;/main/favs.js</URL>
-  <MD5>cff1d8d3cdcbe24ad0df268b1f55475c</MD5>
+  <MD5>fb6d0df21434dc04b1e508ec30946512</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/log_api.php">

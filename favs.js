@@ -132,8 +132,13 @@
             if (!menu) return;
             var host = document.getElementById('qf-popup-host');
             if (host) { host.style.display = 'block'; host.classList.add('qf-visible'); }
-            menu.style.display = '';            // let the stylesheet decide
+            // Set BOTH. The class is what the head CSS keys off
+            // (#my-custom-fav-menu.qf-open{display:block!important}), and the
+            // inline style keeps the menu working even if that CSS is absent -
+            // otherwise popup.php's own "#my-custom-fav-menu{display:none}"
+            // wins and the button appears completely dead.
             menu.classList.add('qf-open');
+            menu.style.display = 'block';
             positionMenu(menu, anchor);
         });
     }
