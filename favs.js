@@ -41,6 +41,28 @@
     /* 1. Popup payload                                                    */
     /* ------------------------------------------------------------------ */
 
+    // Emoji webfont. Loaded as a normal, non-blocking <link> once the page has
+    // settled - never as an @import inside the pop-up's own stylesheet, which
+    // used to hold that sheet back and let the menu paint unstyled.
+    // If it never arrives (slow link, server offline, Google unreachable) the
+    // platform emoji font in the CSS stack renders instead, so icons always show.
+    function ensureEmojiFont() {
+        if (document.getElementById('qf-emoji-font')) return;
+
+        var pre = document.createElement('link');
+        pre.rel = 'preconnect';
+        pre.href = 'https://fonts.gstatic.com';
+        pre.crossOrigin = 'anonymous';
+        document.head.appendChild(pre);
+
+        var link = document.createElement('link');
+        link.id = 'qf-emoji-font';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap';
+        link.media = 'all';
+        document.head.appendChild(link);
+    }
+
     var popupLoading = false;
 
     function loadPopup(done) {
@@ -54,8 +76,16 @@
             .then(function (html) {
                 var host = document.createElement('div');
                 host.id = 'qf-popup-host';
+                // Hidden inline BEFORE any markup goes in, so the fragment can
+                // never paint even for one frame. popup.php's own <style> is not
+                // trusted for this: it begins with an external @import (Google
+                // Fonts) and a sheet with a pending import can be applied late,
+                // during which the raw menu renders full size. That was the flash.
+                host.style.display = 'none';
                 host.innerHTML = html; // <style> blocks inserted this way still apply
                 document.body.appendChild(host);
+                var m0 = host.querySelector('#my-custom-fav-menu');
+                if (m0) m0.style.display = 'none';   // belt and braces
                 popupLoading = false;
                 var built = document.getElementById('my-custom-fav-menu');
                 bindPopupHover(built);
@@ -91,22 +121,28 @@
 
     function isOpen() {
         var m = document.getElementById('my-custom-fav-menu');
-        return !!m && m.style.display === 'block';
+        return !!m && m.classList.contains('qf-open');
     }
 
     function openMenu() {
         var anchor = document.getElementById('qf-custom-btn');
         if (!anchor) return;
+        ensureEmojiFont();
         loadPopup(function (menu) {
             if (!menu) return;
-            menu.style.display = 'block';
+            var host = document.getElementById('qf-popup-host');
+            if (host) { host.style.display = 'block'; host.classList.add('qf-visible'); }
+            menu.style.display = '';            // let the stylesheet decide
+            menu.classList.add('qf-open');
             positionMenu(menu, anchor);
         });
     }
 
     function closeMenu() {
         var m = document.getElementById('my-custom-fav-menu');
-        if (m) m.style.display = 'none';
+        if (m) { m.classList.remove('qf-open'); m.style.display = 'none'; }
+        var host = document.getElementById('qf-popup-host');
+        if (host) { host.classList.remove('qf-visible'); host.style.display = 'none'; }
     }
 
     function toggleMenu() {
@@ -136,6 +172,7 @@
     }
 
     window.qfToggleMenu = toggleMenu;
+    window.qfCloseMenu  = closeMenu;
 
     /* ------------------------------------------------------------------ */
     /* 3. Put the button at the end of the nav bar                         */
@@ -239,9 +276,28 @@
         return true;
     }
 
+    // Pre-fetching is a convenience, not a requirement. Doing it while the page
+    // is still rendering is what put menu markup on screen mid-load, so hold off
+    // until the load event has fired and the browser is idle.
+    var warmed = false;
+    function warmPopup() {
+        if (warmed) return;
+        warmed = true;
+        var go = function () {
+            var work = function () { ensureEmojiFont(); loadPopup(); };
+            if (window.requestIdleCallback) {
+                window.requestIdleCallback(work, { timeout: 3000 });
+            } else {
+                setTimeout(work, 800);
+            }
+        };
+        if (document.readyState === 'complete') go();
+        else window.addEventListener('load', go, { once: true });
+    }
+
     function init() {
         if (!placeButton()) return false;
-        loadPopup();                 // warm the payload so the first click is instant
+        warmPopup();                 // pre-fetch, but never during page render
         return true;
     }
 
@@ -280,10 +336,10 @@
 /* ---------------------------------------------------------------------- */
 document.addEventListener('click', function (e) {
     var customMenu = document.getElementById('my-custom-fav-menu');
-    if (!customMenu || customMenu.style.display !== 'block') return;
+    if (!customMenu || !customMenu.classList.contains('qf-open')) return;
 
     if (!e.target.closest('#my-custom-fav-menu') && !e.target.closest('#qf-custom-btn')) {
-        customMenu.style.display = 'none';
+        window.qfCloseMenu && window.qfCloseMenu();
         return;
     }
 
@@ -309,7 +365,7 @@ document.addEventListener('click', function (e) {
                 : '/plugins/user.scripts/backgroundScript.sh&arg1=' + tmpScriptPath;
 
             openBox(targetUrl, 'Executing: ' + path, 600, 900, true);
-            customMenu.style.display = 'none';
+            window.qfCloseMenu && window.qfCloseMenu();
         });
     }
     else if (action === 'script_log') {
@@ -343,6 +399,6 @@ document.addEventListener('click', function (e) {
                         "<div style='padding:20px;color:red;'>Fetch Error: " + err + '</div>';
                 }
             });
-        customMenu.style.display = 'none';
+        window.qfCloseMenu && window.qfCloseMenu();
     }
 }, true);

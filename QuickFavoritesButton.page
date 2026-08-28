@@ -38,6 +38,18 @@ if (($qf_settings['hide_favorites'] ?? 'no') === 'yes') $qf_hide[] = '/Favorites
     white-space: nowrap;
     line-height: 1;
 }
+
+/* Keep the pop-up out of sight from the very first paint.
+   This lives in <head>, so it is parsed before any page content and long before
+   favs.js injects the menu. popup.php carries its own "display:none" rule, but
+   that stylesheet starts with an external @import (Google Fonts); a sheet whose
+   import is still loading can be applied a beat late, and in that window the raw
+   menu paints at full size - the icons flashing during page loads.
+   Visibility is driven by the .qf-open / .qf-visible classes instead. */
+#qf-popup-host { display: none; }
+#qf-popup-host.qf-visible { display: block; }
+#my-custom-fav-menu { display: none !important; }
+#my-custom-fav-menu.qf-open { display: block !important; }
 <?php foreach ($qf_hide as $qf_href): ?>
 #menu .nav-item:has(> a[href="<?= htmlspecialchars($qf_href, ENT_QUOTES) ?>"]) { display: none !important; }
 <?php endforeach; ?>

@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.27d">
+<!ENTITY version   "2026.08.28a">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -16,6 +16,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.08.28
+- FIXED: Occasional icon flashes used by QF inunRAID Web UI.  
+
 ###2026.08.27
 - MAINTENANCE: Provided forum support link to the plugin.  
 - DONATION: Added Donation link.
@@ -65,22 +68,22 @@ mkdir -p /usr/local/emhttp/plugins/quick.favorites
 
 <FILE Name="&plugdir;/QuickFavorites.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
-  <MD5>e39f457cfc29f24f9613bb30aa3a4d0b</MD5>
+  <MD5>3407b7646add18ee458280aacaff553f</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/QuickFavoritesButton.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavoritesButton.page</URL>
-  <MD5>307d92853ad5e834830a71af810be73d</MD5>
+  <MD5>e13a1c83049f146d6542a03a96151b8f</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/popup.php">
   <URL>https://raw.githubusercontent.com/&github;/main/popup.php</URL>
-  <MD5>405bd24e0d171d81e406477a07255a40</MD5>
+  <MD5>a8ae7938f90d1b1991ce7b870a4a8b0c</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/favs.js">
   <URL>https://raw.githubusercontent.com/&github;/main/favs.js</URL>
-  <MD5>507eed35422a881d366632261df76892</MD5>
+  <MD5>cff1d8d3cdcbe24ad0df268b1f55475c</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/log_api.php">

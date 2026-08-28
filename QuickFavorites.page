@@ -403,7 +403,7 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                                     <?php $fa = (strpos($data['icon'], 'fa-') === 0) ? $data['icon'] : 'fa-' . $data['icon']; ?>
                                     <i class="fa <?= htmlspecialchars($fa) ?>" style="width:28px; text-align:center;"></i>
                                 <?php else: ?>
-                                    <span style="font-family: 'Noto Color Emoji', sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
+                                    <span style="font-family: 'Noto Color Emoji','Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Android Emoji',EmojiSymbols,sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;"><?= htmlspecialchars($data['icon']) ?></span>
                                 <?php endif; ?>
                             </span>
                             <input type="text" name="icon[]" value="<?= htmlspecialchars($data['icon']) ?>" required class="qf-input" oninput="updatePreview(this)" title="<?= htmlspecialchars($data['icon']) ?>">
@@ -539,13 +539,13 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                     <h3 style="margin-top: 0; margin-bottom: 15px;">Advanced Icon Guide</h3>
                     <p style="margin-top: 0; margin-bottom: 15px; font-size: 14px;">The auto-scanner tries to find native Unraid icons, but you have three powerful ways to customize them manually:</p>
 
-                    <h4 style="margin-top: 0; margin-bottom: 5px; font-size: 14px;">1. Google Noto Emojis (Recommended)</h4>
+                    <h4 style="margin-top: 0; margin-bottom: 5px; font-size: 14px;">1. Emojis (Recommended)</h4>
                     <p style="margin-top: 0; margin-bottom: 10px; font-size: 13px; line-height: 1.5;">
-                        You can use standard emojis, and the plugin will automatically upgrade them to the high-quality <strong>Google Noto Color</strong> style. This ensures consistent, premium 3D-style icons across all devices (Windows, Mac, iOS, Android).
+                        You can use standard emojis. Where possible the plugin renders them in the <strong>Google Noto Color</strong> style, which keeps icons looking the same on Windows, Mac, iOS and Android. The font is fetched from Google once per session; if your server has no internet access, or the request is slow, emojis fall back to your own device's emoji font. They always display either way &mdash; only the styling differs.
                     </p>
                     <ul style="margin-top: 0px; list-style-type: disc; padding-left: 20px; font-size: 13px; line-height: 1.5; margin-bottom: 15px;">
                         <li style="margin-bottom: 6px;"><strong>Quick Pick:</strong> Press <code>Win + .</code> (Windows) or <code>Cmd + Ctrl + Space</code> (Mac) to open your OS emoji keyboard and insert directly.</li>
-                        <li><strong>Browse online:</strong> Visit <a href="https://emojiterra.com/" target="_blank" style="color: #4da6ff; text-decoration: none;">emojiterra.com</a> to browse icons. You will see how the emoji looks on different platforms (Apple, Google, etc.). Simply click "Copy" on the raw Unicode character and paste it here. <br><em>Note: Even if it temporarily looks like the standard Windows/Mac flat emoji when you paste it into the box, the plugin will automatically transform it into the beautiful Google version in the live preview and final menu!</em></li>
+                        <li><strong>Browse online:</strong> Visit <a href="https://emojiterra.com/" target="_blank" style="color: #4da6ff; text-decoration: none;">emojiterra.com</a> to browse icons. You will see how the emoji looks on different platforms (Apple, Google, etc.). Simply click "Copy" on the raw Unicode character and paste it here. <br><em>Note: it may first appear as your platform's own flat emoji when pasted. Once the Noto font loads it switches to the Google version in both the preview and the menu. If it stays flat, the font simply is not available &mdash; the icon still works.</em></li>
                     </ul>
 
                     <h4 style="margin-top: 0; margin-bottom: 5px; font-size: 14px;">2. FontAwesome &amp; Custom Images</h4>
@@ -614,7 +614,7 @@ function updatePreview(inputElement) {
         if (!val.startsWith('fa-') && val !== '') val = 'fa-' + val;
         wrapper.html('<i class="fa ' + val + '" style="width:28px; text-align:center;"></i>');
     } else {
-        wrapper.html('<span style="font-family: \'Noto Color Emoji\', sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
+        wrapper.html('<span style="font-family: \'Noto Color Emoji\',\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Segoe UI Symbol\',\'Android Emoji\',EmojiSymbols,sans-serif; font-size: 28px; line-height: 28px; display: inline-block; width: 28px; text-align: center;">' + val + '</span>');
     }
 }
 

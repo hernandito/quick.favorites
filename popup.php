@@ -45,7 +45,11 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
 ?>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
+    /* The emoji webfont is no longer pulled in with @import. An @import must be
+       the first thing in a stylesheet and blocks that sheet from applying until
+       the remote request finishes - which is what let the menu paint unstyled.
+       favs.js now loads it as a normal <link> after the page has settled, and
+       the stack below guarantees emoji render regardless. */
 
     #my-custom-fav-menu { 
         display: none; position: absolute; z-index: 99999; 
@@ -100,7 +104,11 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
     <?= $custom_css ?>
 </style>
 
-<div id="my-custom-fav-menu">
+<!-- display:none is inline on purpose. The <style> above begins with an
+     external @import; while that import is loading the sheet can be applied
+     late, and the menu would paint full-size for a frame. An inline style is
+     honoured immediately, with no stylesheet involved. -->
+<div id="my-custom-fav-menu" style="display:none">
     <div class="qf-main-header"><?= htmlspecialchars($style['menu_title']) ?></div>
     
     <?php if (empty($grouped_favs)): ?>
@@ -124,7 +132,7 @@ $custom_css = file_exists($css_file) ? file_get_contents($css_file) : '';
                                 <?php $fa = (strpos($item['icon'], 'fa-') === 0) ? $item['icon'] : 'fa-' . $item['icon']; ?>
                                 <i class="fa <?= htmlspecialchars($fa) ?> qf-icon-fa"></i>
                             <?php else: ?>
-								<span style="font-family: 'Noto Color Emoji', sans-serif; font-size: <?= htmlspecialchars($style['icon_size'] ?? '32') ?>px; line-height: 1; display: inline-block; vertical-align: middle; text-align: center; margin-bottom: 10px;"><?= htmlspecialchars($item['icon']) ?></span>
+								<span style="font-family: 'Noto Color Emoji','Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Android Emoji',EmojiSymbols,sans-serif; font-size: <?= htmlspecialchars($style['icon_size'] ?? '32') ?>px; line-height: 1; display: inline-block; vertical-align: middle; text-align: center; margin-bottom: 10px;"><?= htmlspecialchars($item['icon']) ?></span>
                             <?php endif; ?>
                             <span class="qf-label"><?= htmlspecialchars($item['label']) ?></span>
                         </a>
