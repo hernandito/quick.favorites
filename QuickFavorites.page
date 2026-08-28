@@ -137,11 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_favs'])) {
         'section_border_color' => $_POST['section_border_color'] ?? '#554000',
         'icon_color' => $_POST['icon_color'] ?? '#FFCA28',
         'label_color' => $_POST['label_color'] ?? '#CCCCCC',
-        // Optional tab hiding, applied as CSS by QuickFavoritesButton.page
         'open_mode' => $_POST['open_mode'] ?? 'click',
         'hover_delay' => $_POST['hover_delay'] ?? '250',
-        'hide_stats' => $_POST['hide_stats'] ?? 'no',
-        'hide_favorites' => $_POST['hide_favorites'] ?? 'no'
     ];
 
     file_put_contents("$cfg_dir/appearance.json", json_encode($appearance_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -187,9 +184,7 @@ $defaults = [
     'icon_color' => '#e0e0e0',
     'label_color' => '#cccccc',
     'open_mode' => 'click',
-    'hover_delay' => '250',
-    'hide_stats' => 'no',
-    'hide_favorites' => 'no'
+    'hover_delay' => '250'
 ];
 
 $loaded = file_exists($appearance_file) ? json_decode(file_get_contents($appearance_file), true) : [];
@@ -480,21 +475,6 @@ $saved_notes = file_exists($notes_file) ? file_get_contents($notes_file) : '';
                         <input type="number" name="hover_delay" value="<?= htmlspecialchars($style['hover_delay']) ?>" class="qf-input" style="font-size: 12px; font-weight: bold;" min="0" max="2000" step="50">
                         <div style="font-size: 11px; opacity: 0.75; line-height: 1.4; margin-top: 3px;">Pause before the menu opens. 250 is a good default; raise it if the menu opens while you are just passing over the button.</div>
                     </div>
-                    <div>
-                        <label>Hide "Stats" Tab:</label>
-                        <select name="hide_stats" class="qf-input" style="font-size: 12px; font-weight: bold;">
-                            <option value="no" <?= $style['hide_stats'] === 'no' ? 'selected' : '' ?>>No</option>
-                            <option value="yes" <?= $style['hide_stats'] === 'yes' ? 'selected' : '' ?>>Yes</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Hide Unraid "Favorites" Tab:</label>
-                        <select name="hide_favorites" class="qf-input" style="font-size: 12px; font-weight: bold;">
-                            <option value="no" <?= $style['hide_favorites'] === 'no' ? 'selected' : '' ?>>No</option>
-                            <option value="yes" <?= $style['hide_favorites'] === 'yes' ? 'selected' : '' ?>>Yes</option>
-                        </select>
-                    </div>
-
                     <?php
                     $color_fields = [
                         'bg_color'             => 'Menu BG:',
@@ -734,8 +714,6 @@ function resetAppearanceDefaults() {
         $('select[name="open_mode"]').val('click');
         $('input[name="hover_delay"]').val('250');
         qfSyncOpenMode();
-        $('select[name="hide_stats"]').val('no');
-        $('select[name="hide_favorites"]').val('no');
 
         function setCol(name, val) {
             var textInput = $('input[name="'+name+'"]');

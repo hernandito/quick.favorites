@@ -20,12 +20,6 @@ $qf_label = $qf_settings['header_label'] ?? '⭐⭐';
 $qf_mode  = ($qf_settings['open_mode'] ?? 'click') === 'hover' ? 'hover' : 'click';
 $qf_delay = (int)($qf_settings['hover_delay'] ?? 250);
 if ($qf_delay < 0 || $qf_delay > 2000) $qf_delay = 250;
-
-// Optional tab hiding. Matched on href, not on the visible caption, because tab
-// captions run through Unraid's translation layer and change per locale.
-$qf_hide = [];
-if (($qf_settings['hide_stats'] ?? 'no') === 'yes')     $qf_hide[] = '/Stats';
-if (($qf_settings['hide_favorites'] ?? 'no') === 'yes') $qf_hide[] = '/Favorites';
 ?>
 <style>
 /* Unraid's default-base.css hides label spans inside nav items:
@@ -41,23 +35,18 @@ if (($qf_settings['hide_favorites'] ?? 'no') === 'yes') $qf_hide[] = '/Favorites
 
 /* Keep the pop-up out of sight from the very first paint.
    This lives in <head>, so it is parsed before any page content and long before
-   favs.js injects the menu. popup.php carries its own "display:none" rule, but
-   that stylesheet starts with an external @import (Google Fonts); a sheet whose
-   import is still loading can be applied a beat late, and in that window the raw
-   menu paints at full size - the icons flashing during page loads.
+   favs.js injects the menu. popup.php carries its own "display:none" rule too,
+   but relying on an injected stylesheet alone once let the raw menu paint at
+   full size for a frame - the icons flashing during page loads.
    Visibility is driven by the .qf-open / .qf-visible classes instead. */
 #qf-popup-host { display: none; }
 #qf-popup-host.qf-visible { display: block; }
 #my-custom-fav-menu { display: none !important; }
 #my-custom-fav-menu.qf-open { display: block !important; }
-<?php foreach ($qf_hide as $qf_href): ?>
-#menu .nav-item:has(> a[href="<?= htmlspecialchars($qf_href, ENT_QUOTES) ?>"]) { display: none !important; }
-<?php endforeach; ?>
 </style>
 <script>
 window.qf_settings = {
   label: <?= json_encode((string)$qf_label, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
-  hide: <?= json_encode($qf_hide, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
   open_mode: <?= json_encode($qf_mode) ?>,
   hover_delay: <?= (int)$qf_delay ?>
 };

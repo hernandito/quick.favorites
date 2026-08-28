@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.08.28b">
+<!ENTITY version   "2026.08.28c">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -18,6 +18,7 @@
 <CHANGES>
 ###2026.08.28
 - FIXED: Occasional icon flashes used by QF inunRAID Web UI.  
+- FIXED: Remove options to hide unRAID menu items. NOT ALLOWED.
 
 ###2026.08.27
 - MAINTENANCE: Provided forum support link to the plugin.  
@@ -68,12 +69,12 @@ mkdir -p /usr/local/emhttp/plugins/quick.favorites
 
 <FILE Name="&plugdir;/QuickFavorites.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavorites.page</URL>
-  <MD5>3407b7646add18ee458280aacaff553f</MD5>
+  <MD5>6113542fa34e0bf420657ac9104d839e</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/QuickFavoritesButton.page">
   <URL>https://raw.githubusercontent.com/&github;/main/QuickFavoritesButton.page</URL>
-  <MD5>e13a1c83049f146d6542a03a96151b8f</MD5>
+  <MD5>f11429368760b0ae8bd851e486c5f864</MD5>
 </FILE>
 
 <FILE Name="&plugdir;/popup.php">
