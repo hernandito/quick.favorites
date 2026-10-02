@@ -357,20 +357,65 @@ document.addEventListener('click', function (e) {
 
     if (action === 'script_modal' || action === 'script_background') {
         e.preventDefault(); e.stopPropagation();
+
+        // User Scripts never runs the persistent copy under /boot. It runs a
+        // prepared copy in /tmp/user.scripts/tmpScripts/, which only exists once
+        // 'convertScript' has built it. /tmp is cleared on reboot, so before a
+        // script has been run once from the User Scripts page there is nothing
+        // there - which is why launching from here failed after every reboot.
+        //
+        // The previous code posted action:'intermediate'. That is not a case in
+        // the plugin's exec.php switch, so the request returned 200 with an
+        // empty body, the success handler fired anyway, and we launched a path
+        // that did not exist. Background mode still printed "Now starting the
+        // script in the background" because backgroundScript.sh echoes that line
+        // before it ever looks at the file.
+        //
+        // 'convertScript' is the real action: it creates the tmpScripts folder,
+        // copies the script, adds a shebang if missing, strips CR characters,
+        // makes it executable, and echoes back the path to run. This mirrors
+        // actuallyRunScript()/backgroundScript() in the User Scripts page itself.
         var fullScriptPath = '/boot/config/plugins/user.scripts/scripts/' + path + '/script';
 
         $.post('/plugins/user.scripts/exec.php', {
-            script: fullScriptPath,
-            action: 'intermediate',
+            action: 'convertScript',
+            path: fullScriptPath,
             csrf_token: token
-        }, function () {
-            var tmpScriptPath = '/tmp/user.scripts/tmpScripts/' + path + '/script';
+        }, function (preparedPath) {
+            preparedPath = String(preparedPath || '').trim();
+
+            // Empty means conversion failed - do NOT launch anything.
+            if (!preparedPath) {
+                console.error('[QuickFavorites] User Scripts returned no path for:', path);
+                if (typeof swal === 'function') {
+                    swal({ title: 'Could not start script',
+                           text: 'User Scripts did not prepare "' + path + '".\n\n' +
+                                 'Check that the script still exists under Settings > User Scripts.',
+                           type: 'error', confirmButtonText: 'Ok' });
+                } else {
+                    alert('Could not start script: ' + path);
+                }
+                return;
+            }
+
+            // A script marked "array must be started" returns arrayNotStarted.sh
+            // instead. That path is meant to be launched - it prints the reason -
+            // so pass it straight through rather than treating it as an error.
             var targetUrl = (action === 'script_modal')
-                ? '/plugins/user.scripts/startScript.sh&arg1=' + tmpScriptPath
-                : '/plugins/user.scripts/backgroundScript.sh&arg1=' + tmpScriptPath;
+                ? '/plugins/user.scripts/startScript.sh&arg1=' + preparedPath + '&arg2='
+                : '/plugins/user.scripts/backgroundScript.sh&arg1=' + preparedPath;
 
             openBox(targetUrl, 'Executing: ' + path, 600, 900, true);
             window.qfCloseMenu && window.qfCloseMenu();
+        }).fail(function (xhr, status, error) {
+            console.error('[QuickFavorites] convertScript failed:', status, error);
+            if (typeof swal === 'function') {
+                swal({ title: 'Could not start script',
+                       text: 'User Scripts did not respond. Is the User Scripts plugin installed?',
+                       type: 'error', confirmButtonText: 'Ok' });
+            } else {
+                alert('Could not start script: ' + path);
+            }
         });
     }
     else if (action === 'script_log') {
