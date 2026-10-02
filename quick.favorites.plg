@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "quick.favorites">
 <!ENTITY author    "hernandito">
-<!ENTITY version   "2026.10.02a">
+<!ENTITY version   "2026.10.02b">
 <!ENTITY github    "hernandito/quick.favorites">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -16,6 +16,9 @@
         min="6.12.0">
 
 <CHANGES>
+###2026.10.02
+- FIXED: Issue w/ UserScripts not working after a reboot.
+
 ###2026.08.28
 - FIXED: Occasional icon flashes used by QF inunRAID Web UI.  
 - FIXED: Remove options to hide unRAID menu items. NOT ALLOWED.
